@@ -95,14 +95,15 @@ export default function AuditTrail() {
                 <th>Action Type</th>
                 <th>Finding ID</th>
                 <th>Reviewer</th>
-                <th>Decision / Details</th>
-                <th>Rationale</th>
+                <th>Previous Status</th>
+                <th>New Status / Decision</th>
+                <th>Reviewer Rationale</th>
               </tr>
             </thead>
             <tbody>
               {auditData.events.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--slate-400)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'var(--slate-400)' }}>
                     No audit events recorded yet. Run a reconciliation or record a human review decision.
                   </td>
                 </tr>
@@ -121,8 +122,15 @@ export default function AuditTrail() {
                     <td className="mono" style={{ fontWeight: 600 }}>{evt.finding_id || '—'}</td>
                     <td>{evt.reviewer_id}</td>
                     <td>
+                      <span className="badge badge-neutral" style={{ fontSize: '11px' }}>
+                        {evt.previous_review_status || 'Needs Review'}
+                      </span>
+                    </td>
+                    <td>
                       {evt.decision ? (
-                        <strong>{evt.decision}</strong>
+                        <span className="badge badge-success" style={{ fontSize: '11px' }}>
+                          {evt.decision}
+                        </span>
                       ) : evt.details ? (
                         <span style={{ fontSize: '12px', color: 'var(--slate-400)' }}>
                           {evt.details.total_discrepancies} findings, {evt.details.matched_records} matched

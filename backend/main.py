@@ -88,6 +88,12 @@ class ReviewRequest(BaseModel):
 
 
 PERMITTED_DECISIONS = {
+    # Phase 4 Controlled Actions
+    "Confirmed discrepancy",
+    "Requires further investigation",
+    "Not a discrepancy, with justification",
+    "Resolved after external verification",
+    # Backward compatible aliases
     "Confirmed Discrepancy",
     "Accept eCRF",
     "Accept Lab",
@@ -291,7 +297,8 @@ async def download_sample_data(dataset_type: str):
 async def record_human_review(review: ReviewRequest):
     """Record a human-reviewed resolution for a specific discrepancy finding.
 
-    Validates decision, updates finding status in-memory if reconciliation_id is provided,
+    Validates decision and rationale, tracks previous review status,
+    updates finding status in-memory if reconciliation_id is provided,
     and logs an audit trail event. Never silently alters raw source data.
     """
     if review.decision not in PERMITTED_DECISIONS:
@@ -300,8 +307,16 @@ async def record_human_review(review: ReviewRequest):
             detail=f"Invalid decision '{review.decision}'. Permitted decisions: {', '.join(sorted(PERMITTED_DECISIONS))}",
         )
 
+    if not review.rationale or len(review.rationale.strip()) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A substantive reviewer rationale (minimum 3 characters) is required.",
+        )
+
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     finding_updated = False
+    previous_review_status = "Needs Review"
+    new_review_status = review.decision
 
     # If reconciliation_id provided, attempt to update finding in memory
     if review.reconciliation_id:
@@ -309,7 +324,8 @@ async def record_human_review(review: ReviewRequest):
         if recon:
             for disc in recon.get("discrepancies", []):
                 if disc.get("finding_id") == review.finding_id:
-                    disc["review_status"] = review.decision
+                    previous_review_status = disc.get("review_status", "Needs Review")
+                    disc["review_status"] = new_review_status
                     disc["reviewed_by"] = review.reviewer_id
                     disc["reviewer_rationale"] = review.rationale
                     disc["reviewed_at"] = now_iso
@@ -321,8 +337,10 @@ async def record_human_review(review: ReviewRequest):
         "timestamp": now_iso,
         "action": "HUMAN_REVIEW_DECISION",
         "finding_id": review.finding_id,
-        "decision": review.decision,
         "reviewer_id": review.reviewer_id,
+        "previous_review_status": previous_review_status,
+        "new_review_status": new_review_status,
+        "decision": review.decision,
         "rationale": review.rationale,
         "reconciliation_id": review.reconciliation_id,
         "finding_updated": finding_updated,
@@ -334,6 +352,19 @@ async def record_human_review(review: ReviewRequest):
         "message": f"Review recorded for finding {review.finding_id}",
         "audit_event": audit_event,
     }
+
+
+def _safe_csv_field(val: Any) -> str:
+    """Sanitize field value to prevent CSV / Spreadsheet formula injection.
+
+    Prefixes characters =, +, -, @, \t, \r with a single quote if string starts with them.
+    """
+    if val is None or pd.isna(val):
+        return ""
+    s = str(val)
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{s}"
+    return s
 
 
 @app.get("/api/audit", tags=["Review & Audit"])
@@ -349,7 +380,10 @@ async def get_audit_trail():
 
 @app.get("/api/export/{reconciliation_id}", tags=["Export"])
 async def export_reconciliation_csv(reconciliation_id: str):
-    """Export findings for a given reconciliation session as a CSV file."""
+    """Export findings for a given reconciliation session as a CSV file safely.
+
+    Prevents formula injection by sanitizing untrusted inputs.
+    """
     recon = store.get_reconciliation(reconciliation_id)
     if not recon:
         raise HTTPException(
@@ -359,29 +393,30 @@ async def export_reconciliation_csv(reconciliation_id: str):
 
     findings = recon.get("discrepancies", [])
     output = io.StringIO()
-    writer = csv.writer(output)
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
-    # Standard clinical export headers
+    # Standard clinical export headers matching Phase 4 specifications
     headers = [
         "Finding ID",
-        "Discrepancy Type",
-        "Severity",
         "Study ID",
         "Participant ID",
         "Sample ID",
-        "Rule Triggered",
+        "Discrepancy Category",
         "Description",
-        "Suggested Action",
-        "Review Status",
+        "Rule Triggered",
+        "Suggested Investigation Step",
+        "Current Review Status",
         "Reviewed By",
         "Reviewer Rationale",
         "Reviewed At",
         "eCRF Analyte",
         "eCRF Value",
         "eCRF Unit",
+        "eCRF Row",
         "Lab Analyte",
         "Lab Value",
         "Lab Unit",
+        "Lab Row",
     ]
     writer.writerow(headers)
 
@@ -389,25 +424,26 @@ async def export_reconciliation_csv(reconciliation_id: str):
         ecrf_ev = f.get("ecrf_evidence") or {}
         lab_ev = f.get("lab_evidence") or {}
         writer.writerow([
-            f.get("finding_id", ""),
-            f.get("discrepancy_type", ""),
-            f.get("severity", ""),
-            f.get("study_id", ""),
-            f.get("participant_id", ""),
-            f.get("sample_id", ""),
-            f.get("rule_triggered", ""),
-            f.get("description", ""),
-            f.get("suggested_investigation_step", ""),
-            f.get("review_status", "Needs Review"),
-            f.get("reviewed_by", ""),
-            f.get("reviewer_rationale", ""),
-            f.get("reviewed_at", ""),
-            ecrf_ev.get("analyte", ""),
-            ecrf_ev.get("value", ""),
-            ecrf_ev.get("unit", ""),
-            lab_ev.get("analyte", ""),
-            lab_ev.get("value", ""),
-            lab_ev.get("unit", ""),
+            _safe_csv_field(f.get("finding_id", "")),
+            _safe_csv_field(f.get("study_id", "")),
+            _safe_csv_field(f.get("participant_id", "")),
+            _safe_csv_field(f.get("sample_id", "")),
+            _safe_csv_field(f.get("discrepancy_type", "")),
+            _safe_csv_field(f.get("description", "")),
+            _safe_csv_field(f.get("rule_triggered", "")),
+            _safe_csv_field(f.get("suggested_investigation_step", "")),
+            _safe_csv_field(f.get("review_status", "Needs Review")),
+            _safe_csv_field(f.get("reviewed_by", "")),
+            _safe_csv_field(f.get("reviewer_rationale", "")),
+            _safe_csv_field(f.get("reviewed_at", "")),
+            _safe_csv_field(ecrf_ev.get("analyte", "")),
+            _safe_csv_field(ecrf_ev.get("value", "")),
+            _safe_csv_field(ecrf_ev.get("unit", "")),
+            _safe_csv_field(ecrf_ev.get("row_number", "")),
+            _safe_csv_field(lab_ev.get("analyte", "")),
+            _safe_csv_field(lab_ev.get("value", "")),
+            _safe_csv_field(lab_ev.get("unit", "")),
+            _safe_csv_field(lab_ev.get("row_number", "")),
         ])
 
     csv_data = output.getvalue()

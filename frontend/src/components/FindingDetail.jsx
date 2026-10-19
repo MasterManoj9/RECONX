@@ -7,15 +7,16 @@ import {
 } from 'lucide-react';
 
 const PERMITTED_DECISIONS = [
-  'Confirmed Discrepancy',
-  'Accept eCRF',
-  'Accept Lab',
-  'False Positive',
-  'Query Site',
+  'Confirmed discrepancy',
+  'Requires further investigation',
+  'Not a discrepancy, with justification',
+  'Resolved after external verification',
 ];
 
 export default function FindingDetail({ finding, onClose, onReviewSubmitted }) {
-  const [decision, setDecision] = useState(finding.review_status !== 'Needs Review' ? finding.review_status : 'Confirmed Discrepancy');
+  const [decision, setDecision] = useState(
+    finding.review_status !== 'Needs Review' ? finding.review_status : 'Confirmed discrepancy'
+  );
   const [rationale, setRationale] = useState(finding.reviewer_rationale || '');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);

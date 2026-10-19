@@ -161,7 +161,7 @@ def test_review_submission_and_audit():
     # Submit valid review
     review_payload = {
         "finding_id": finding_id,
-        "decision": "Confirmed Discrepancy",
+        "decision": "Confirmed discrepancy",
         "reviewer_id": "dr_smith",
         "rationale": "Verified with site coordinator; re-draw needed.",
         "reconciliation_id": recon_id,
@@ -170,16 +170,32 @@ def test_review_submission_and_audit():
     assert review_res.status_code == 200
     assert review_res.json()["status"] == "success"
 
-    # Verify audit event recorded
+    # Verify audit event recorded with previous and new status
     audit_res = client.get("/api/audit")
     assert audit_res.status_code == 200
     events = audit_res.json()["events"]
-    assert any(e["action"] == "HUMAN_REVIEW_DECISION" and e["finding_id"] == finding_id for e in events)
+    evt = next((e for e in events if e["action"] == "HUMAN_REVIEW_DECISION" and e["finding_id"] == finding_id), None)
+    assert evt is not None
+    assert evt["previous_review_status"] == "Needs Review"
+    assert evt["new_review_status"] == "Confirmed discrepancy"
+    assert evt["decision"] == "Confirmed discrepancy"
+    assert evt["rationale"] == "Verified with site coordinator; re-draw needed."
 
     # Check that in-memory reconciliation reflects reviewed status
     updated_recon = client.get(f"/api/reconcile/{recon_id}").json()
-    assert updated_recon["discrepancies"][0]["review_status"] == "Confirmed Discrepancy"
+    assert updated_recon["discrepancies"][0]["review_status"] == "Confirmed discrepancy"
     assert updated_recon["discrepancies"][0]["reviewed_by"] == "dr_smith"
+
+
+def test_review_submission_missing_or_short_rationale():
+    bad_payload = {
+        "finding_id": "DISC-0001",
+        "decision": "Confirmed discrepancy",
+        "reviewer_id": "tester",
+        "rationale": "  ",
+    }
+    res = client.post("/api/review", json=bad_payload)
+    assert res.status_code in (400, 422)
 
 
 def test_review_submission_invalid_decision():
@@ -192,3 +208,27 @@ def test_review_submission_invalid_decision():
     res = client.post("/api/review", json=bad_payload)
     assert res.status_code == 400
     assert "invalid decision" in res.json()["detail"].lower()
+
+
+def test_csv_export_formula_injection_prevention():
+    # Session with potential formula injection triggers (=, +, -, @)
+    ecrf_content = (
+        "study_id,participant_id,sample_id,collection_date,analyte,result_value,unit\n"
+        "=CMD|' /C calc'!A0,PT-101,SMP-001,2026-03-01,Hemoglobin,14.2,g/dL\n"
+    )
+    lab_content = (
+        "study_id,participant_id,sample_id,collection_date,analyte,result_value,unit\n"
+        "=CMD|' /C calc'!A0,PT-101,SMP-001,2026-03-01,Hemoglobin,18.0,g/dL\n"
+    )
+    files = {
+        "ecrf_file": ("ecrf.csv", io.BytesIO(ecrf_content.encode("utf-8")), "text/csv"),
+        "lab_file": ("lab.csv", io.BytesIO(lab_content.encode("utf-8")), "text/csv"),
+    }
+    res = client.post("/api/reconcile", files=files)
+    recon_id = res.json()["reconciliation_id"]
+
+    export_res = client.get(f"/api/export/{recon_id}")
+    assert export_res.status_code == 200
+    # Values starting with '=' should be prepended with single quote in CSV
+    assert "'=CMD|" in export_res.text
+
