@@ -6,6 +6,8 @@ import {
   Database
 } from 'lucide-react';
 
+import { fetchFindingExplanation } from '../services/api';
+
 const PERMITTED_DECISIONS = [
   'Confirmed discrepancy',
   'Requires further investigation',
@@ -21,6 +23,35 @@ export default function FindingDetail({ finding, onClose, onReviewSubmitted }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Optional AI Explanation state
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+
+  const handleRequestAiExplanation = async () => {
+    try {
+      setAiLoading(true);
+      setAiError(null);
+      const res = await fetchFindingExplanation({
+        finding_id: finding.finding_id,
+        discrepancy_type: finding.discrepancy_type,
+        rule_triggered: finding.rule_triggered,
+        study_id: finding.study_id,
+        participant_id: finding.participant_id,
+        sample_id: finding.sample_id,
+        description: finding.description,
+        ecrf_evidence: finding.ecrf_evidence,
+        lab_evidence: finding.lab_evidence,
+        is_missing_record: !finding.ecrf_evidence || !finding.lab_evidence,
+      });
+      setAiExplanation(res);
+    } catch (err) {
+      setAiError(err.message || 'Failed to generate explanation');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   if (!finding) return null;
 
@@ -196,6 +227,75 @@ export default function FindingDetail({ finding, onClose, onReviewSubmitted }) {
           <div style={{ fontSize: '13px', color: 'var(--navy-800)', lineHeight: 1.4 }}>
             {finding.suggested_investigation_step}
           </div>
+        </div>
+
+        {/* Optional AI Explanation Assistant */}
+        <div style={{
+          border: '1px solid #cbd5e1',
+          borderRadius: 'var(--radius-md)',
+          padding: '16px',
+          backgroundColor: 'var(--slate-50)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="badge badge-info" style={{ fontSize: '11px' }}>AI Reviewer Assistant (Optional)</span>
+            </div>
+            {!aiExplanation && (
+              <button
+                type="button"
+                onClick={handleRequestAiExplanation}
+                disabled={aiLoading}
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '4px 10px' }}
+              >
+                {aiLoading ? 'Synthesizing...' : 'Explain with AI Assistant'}
+              </button>
+            )}
+          </div>
+
+          {aiError && (
+            <div style={{ fontSize: '12px', color: 'var(--rose-600)', marginBottom: '8px' }}>
+              {aiError}
+            </div>
+          )}
+
+          {aiExplanation ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px' }}>
+              <div style={{ padding: '8px 12px', backgroundColor: '#eff6ff', borderRadius: '4px', borderLeft: '3px solid #3b82f6' }}>
+                <strong style={{ color: '#1e40af' }}>Summary:</strong> {aiExplanation.plain_language_summary}
+              </div>
+
+              <div>
+                <strong style={{ color: 'var(--navy-800)' }}>Facts Supported by Evidence:</strong>
+                <ul style={{ paddingLeft: '18px', marginTop: '4px', color: 'var(--navy-700)' }}>
+                  {aiExplanation.supported_facts?.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <strong style={{ color: 'var(--navy-800)' }}>Possible Explanations (Hypotheses):</strong>
+                <ul style={{ paddingLeft: '18px', marginTop: '4px', color: 'var(--navy-700)' }}>
+                  {aiExplanation.hypotheses?.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
+                <strong>Data Boundaries:</strong> {aiExplanation.limitations_and_unsupported_claims}
+              </div>
+
+              <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                {aiExplanation.disclaimer}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: '12px', color: 'var(--slate-400)' }}>
+              Click above to generate plain-language hypothesis synthesis and investigation guidance.
+            </div>
+          )}
         </div>
 
         {/* Human Review Form */}

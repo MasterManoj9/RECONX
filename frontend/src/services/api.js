@@ -89,6 +89,20 @@ export async function fetchAuditTrail() {
   return res.json();
 }
 
+export async function fetchFindingExplanation(payload) {
+  const res = await fetch(`${API_BASE}/api/assistant/explain`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || `Explanation request failed with status ${res.status}`);
+  }
+  return data;
+}
+
 export function getExportUrl(reconciliationId) {
   return `${API_BASE}/api/export/${reconciliationId}`;
 }

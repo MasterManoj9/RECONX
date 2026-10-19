@@ -25,6 +25,7 @@ from backend.recon import (
     reconcile_data,
     validate_dataframe,
 )
+from backend.assistant import FindingEvidencePayload, generate_explanation
 
 APP_VERSION = "1.0.0"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB limit
@@ -365,6 +366,22 @@ def _safe_csv_field(val: Any) -> str:
     if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
         return f"'{s}"
     return s
+
+
+@app.post("/api/assistant/explain", tags=["Explanation Assistant"])
+async def explain_finding(payload: FindingEvidencePayload):
+    """Generate structured plain-language explanation for an already-detected finding.
+
+    Strictly de-identified. Does not modify data, judge clinical significance, or resolve findings.
+    """
+    try:
+        explanation = generate_explanation(payload)
+        return explanation
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate explanation: {str(exc)}",
+        )
 
 
 @app.get("/api/audit", tags=["Review & Audit"])
