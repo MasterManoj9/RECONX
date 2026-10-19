@@ -1,44 +1,29 @@
 """ReconX Deterministic Reconciliation Engine.
 
-Detects discrepancies between eCRF and Central Laboratory datasets
-with full auditability, source traceability, and human review states.
+Detects discrepancies between eCRF and Central Laboratory clinical datasets
+with deterministic rules, full auditability, explicit evidence, and human review status.
 """
 
 from __future__ import annotations
 
-import math
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
 from pydantic import BaseModel, Field
 
-# Core required columns for schema validation
-REQUIRED_ECRF_COLUMNS = [
+# Core required fields per Phase 1 specification
+REQUIRED_FIELDS = [
     "study_id",
-    "site_id",
     "participant_id",
-    "visit_name",
     "sample_id",
     "collection_date",
-    "analyte_name",
-    "reported_value",
+    "analyte",
+    "result_value",
     "unit",
 ]
 
-REQUIRED_LAB_COLUMNS = [
-    "study_id",
-    "site_id",
-    "participant_id",
-    "visit_name",
-    "sample_id",
-    "collection_date",
-    "analyte_name",
-    "lab_value",
-    "unit",
-]
-
-# Standard date formats supported for deterministic parsing
-DATE_FORMATS = [
+# Supported explicit date formats
+SUPPORTED_DATE_FORMATS = [
     "%Y-%m-%d",
     "%m/%d/%Y",
     "%d/%m/%Y",
@@ -46,27 +31,26 @@ DATE_FORMATS = [
     "%Y-%m-%d %H:%M:%S",
 ]
 
+DEFAULT_NUMERIC_TOLERANCE = 0.001
 
-class Discrepancy(BaseModel):
-    id: str = Field(..., description="Unique finding identifier")
-    rule_id: str = Field(..., description="Deterministic rule identifier")
-    rule_name: str = Field(..., description="Human-readable rule name")
-    category: str = Field(..., description="Classification category")
-    priority: str = Field(..., description="Operational review priority: HIGH, MEDIUM, LOW")
-    key: Dict[str, str] = Field(..., description="Compound key (study_id, participant_id, sample_id)")
-    site_id: Optional[str] = None
-    visit_name: Optional[str] = None
-    analyte_name: Optional[str] = None
-    ecrf_value: Optional[Any] = None
-    lab_value: Optional[Any] = None
-    ecrf_raw: Optional[Dict[str, Any]] = None
-    lab_raw: Optional[Dict[str, Any]] = None
-    explanation: str = Field(..., description="Factual evidence describing the detected condition")
-    recommended_action: str = Field(..., description="Suggested operational review step")
-    status: str = Field(default="OPEN", description="Review status: OPEN, RESOLVED, DISMISSED")
-    reviewer_notes: Optional[str] = None
-    reviewed_at: Optional[str] = None
-    reviewed_by: Optional[str] = None
+
+class Finding(BaseModel):
+    finding_id: str = Field(..., description="Unique finding identifier")
+    discrepancy_type: str = Field(..., description="Standard discrepancy category")
+    study_id: Optional[str] = None
+    participant_id: Optional[str] = None
+    sample_id: Optional[str] = None
+    severity: str = Field(..., description="Operational review priority: HIGH, MEDIUM, LOW")
+    description: str = Field(..., description="Clear explanation of the detected condition")
+    ecrf_evidence: Optional[Dict[str, Any]] = Field(None, description="Source eCRF values and row index")
+    lab_evidence: Optional[Dict[str, Any]] = Field(None, description="Source Lab values and row index")
+    rule_triggered: str = Field(..., description="Deterministic rule ID and name")
+    suggested_investigation_step: str = Field(..., description="Actionable recommendation for human reviewer")
+    review_status: str = Field(default="Needs Review", description="Human review status")
+
+
+# Backwards compatibility alias for Discrepancy
+Discrepancy = Finding
 
 
 class ReconciliationSummary(BaseModel):
@@ -74,51 +58,71 @@ class ReconciliationSummary(BaseModel):
     total_lab_records: int
     matched_records: int
     total_discrepancies: int
-    discrepancies_by_rule: Dict[str, int]
-    discrepancies_by_priority: Dict[str, int]
     discrepancies_by_category: Dict[str, int]
+    discrepancies_by_priority: Dict[str, int]
+    discrepancies_by_rule: Dict[str, int]
 
 
 class ReconciliationResult(BaseModel):
     summary: ReconciliationSummary
-    discrepancies: List[Discrepancy]
+    discrepancies: List[Finding]
+    reconciliation_metadata: Dict[str, Any] = Field(default_factory=dict)
+    source_row_counts: Dict[str, int] = Field(default_factory=dict)
 
 
-def _clean_str(val: Any) -> str:
-    if val is None or pd.isna(val):
-        return ""
-    return str(val).strip()
-
-
-def _is_empty(val: Any) -> bool:
+def _is_empty_or_na(val: Any) -> bool:
     if val is None:
         return True
     if pd.isna(val):
         return True
     s = str(val).strip()
-    return s == "" or s.lower() == "nan" or s.lower() == "null" or s.lower() == "none"
+    return s == "" or s.lower() in ("nan", "null", "none")
 
 
-def _parse_date(date_str: Any) -> Optional[datetime]:
-    if _is_empty(date_str):
-        return None
-    s = str(date_str).strip()
-    for fmt in DATE_FORMATS:
+def _clean_str(val: Any) -> str:
+    if _is_empty_or_na(val):
+        return ""
+    return str(val).strip()
+
+
+def _parse_date(date_val: Any) -> Tuple[Optional[datetime.date], bool]:
+    """Parse date explicitly. Returns (parsed_date, is_invalid_flag)."""
+    if _is_empty_or_na(date_val):
+        return None, False  # Empty/missing is handled by missing value rule or flagged separately
+    s = str(date_val).strip()
+    for fmt in SUPPORTED_DATE_FORMATS:
         try:
-            return datetime.strptime(s, fmt)
+            return datetime.datetime.strptime(s, fmt).date(), False
         except ValueError:
             continue
-    return None
+    return None, True  # Malformed date
 
 
-def validate_dataframe(df: pd.DataFrame, source_name: str, required_columns: List[str]) -> Tuple[bool, List[str]]:
+def _parse_numeric(val: Any) -> Tuple[Optional[float], bool]:
+    """Parse float explicitly. Returns (parsed_float, is_invalid_flag)."""
+    if _is_empty_or_na(val):
+        return None, False
+    s = str(val).strip().replace(",", "")
+    try:
+        return float(s), False
+    except ValueError:
+        return None, True
+
+
+def validate_dataframe(
+    df: pd.DataFrame, source_name: str, required_columns: Optional[List[str]] = None
+) -> Tuple[bool, List[str]]:
     """Validate DataFrame structure, non-emptiness, and required headers."""
+    if required_columns is None:
+        required_columns = REQUIRED_FIELDS
+
     errors: List[str] = []
     if df is None or df.empty:
         errors.append(f"{source_name} file is empty.")
         return False, errors
 
-    missing_cols = [c for c in required_columns if c not in df.columns]
+    lower_cols = [str(c).strip().lower() for c in df.columns]
+    missing_cols = [c for c in required_columns if c.lower() not in lower_cols]
     if missing_cols:
         errors.append(f"{source_name} is missing required columns: {', '.join(missing_cols)}")
         return False, errors
@@ -126,412 +130,458 @@ def validate_dataframe(df: pd.DataFrame, source_name: str, required_columns: Lis
     return True, errors
 
 
-def reconcile(
+def reconcile_data(
     ecrf_df: pd.DataFrame,
     lab_df: pd.DataFrame,
-    numeric_tolerance: float = 0.001,
-) -> ReconciliationResult:
-    """Execute deterministic clinical reconciliation rules between eCRF and Central Lab datasets."""
-    # Defensive copies with normalized column headers
+    numeric_tolerance: float = DEFAULT_NUMERIC_TOLERANCE,
+) -> Dict[str, Any]:
+    """Execute deterministic clinical reconciliation rules between eCRF and Central Lab datasets.
+
+    Returns a JSON-serializable dictionary per Phase 1 specification.
+    """
+    # Verify inputs are not mutated
     ecrf = ecrf_df.copy()
     lab = lab_df.copy()
-    ecrf.columns = [str(c).strip().lower() for c in ecrf.columns]
-    lab.columns = [str(c).strip().lower() for c in lab.columns]
 
-    valid_ecrf, ecrf_errors = validate_dataframe(ecrf, "eCRF", REQUIRED_ECRF_COLUMNS)
-    valid_lab, lab_errors = validate_dataframe(lab, "Central Lab", REQUIRED_LAB_COLUMNS)
+    # Normalize column names for matching (handling alias columns if passed)
+    ecrf_col_map = {str(c).strip().lower(): c for c in ecrf.columns}
+    lab_col_map = {str(c).strip().lower(): c for c in lab.columns}
+
+    # Column aliases to support both Phase 1 and legacy headers
+    def get_val(row: pd.Series, *field_candidates: str) -> Any:
+        for f in field_candidates:
+            if f in row:
+                return row[f]
+            # case-insensitive check
+            for orig_col in row.index:
+                if str(orig_col).strip().lower() == f.lower():
+                    return row[orig_col]
+        return None
+
+    # Schema validation
+    valid_ecrf, ecrf_errs = validate_dataframe(ecrf, "eCRF")
+    valid_lab, lab_errs = validate_dataframe(lab, "Central Lab")
+
+    # If missing required columns, check if legacy columns exist (e.g. reported_value / lab_value)
+    if not valid_ecrf:
+        # Check if analyte_name and reported_value exist
+        if "analyte_name" in ecrf_col_map and "reported_value" in ecrf_col_map:
+            valid_ecrf = True
+            ecrf_errs = []
+    if not valid_lab:
+        if "analyte_name" in lab_col_map and "lab_value" in lab_col_map:
+            valid_lab = True
+            lab_errs = []
 
     if not valid_ecrf or not valid_lab:
-        all_errors = ecrf_errors + lab_errors
-        raise ValueError(f"Validation failed: {'; '.join(all_errors)}")
+        raise ValueError(f"Validation error: {'; '.join(ecrf_errs + lab_errs)}")
 
-    findings: List[Discrepancy] = []
-    finding_counter = 1
+    findings: List[Finding] = []
+    finding_idx = 1
 
-    def next_id() -> str:
-        nonlocal finding_counter
-        fid = f"DISC-{finding_counter:04d}"
-        finding_counter += 1
+    def make_finding_id() -> str:
+        nonlocal finding_idx
+        fid = f"DISC-{finding_idx:04d}"
+        finding_idx += 1
         return fid
 
-    # Helper to construct compound key
-    def make_key(row: pd.Series) -> Tuple[str, str, str]:
-        return (
-            _clean_str(row.get("study_id")),
-            _clean_str(row.get("participant_id")),
-            _clean_str(row.get("sample_id")),
-        )
+    # 1. Row-level inspection for MISSING_IDENTIFIER and INVALID_DATE
+    def process_source_row_integrity(
+        df: pd.DataFrame, source_name: str, value_col_name: str
+    ) -> List[Tuple[int, Optional[Tuple[str, str, str]], Dict[str, Any]]]:
+        valid_keyed_rows: List[Tuple[int, Optional[Tuple[str, str, str]], Dict[str, Any]]] = []
 
-    # 1. Check for Duplicate Identifiers within each source
-    ecrf_keys = [_clean_str(r.get("study_id")) + "::" + _clean_str(r.get("participant_id")) + "::" + _clean_str(r.get("sample_id")) for _, r in ecrf.iterrows()]
-    lab_keys = [_clean_str(r.get("study_id")) + "::" + _clean_str(r.get("participant_id")) + "::" + _clean_str(r.get("sample_id")) for _, r in lab.iterrows()]
+        for row_idx, row in df.iterrows():
+            source_row_num = int(row_idx) + 1  # 1-indexed row number
+            s_id = get_val(row, "study_id")
+            p_id = get_val(row, "participant_id")
+            smp_id = get_val(row, "sample_id")
+            c_date = get_val(row, "collection_date")
+            analyte = get_val(row, "analyte", "analyte_name")
+            val = get_val(row, "result_value", value_col_name)
+            unit = get_val(row, "unit")
 
-    ecrf_key_counts = pd.Series(ecrf_keys).value_counts()
-    for key_str, count in ecrf_key_counts[ecrf_key_counts > 1].items():
-        parts = key_str.split("::")
-        key_dict = {"study_id": parts[0], "participant_id": parts[1], "sample_id": parts[2]}
-        matching_rows = ecrf[
-            (ecrf["study_id"].astype(str).str.strip() == parts[0])
-            & (ecrf["participant_id"].astype(str).str.strip() == parts[1])
-            & (ecrf["sample_id"].astype(str).str.strip() == parts[2])
-        ]
-        first_row = matching_rows.iloc[0].to_dict()
-        findings.append(
-            Discrepancy(
-                id=next_id(),
-                rule_id="RULE-DUP-ECRF",
-                rule_name="Duplicate eCRF Identifier",
-                category="Identifier Integrity",
-                priority="HIGH",
-                key=key_dict,
-                site_id=str(first_row.get("site_id", "")),
-                visit_name=str(first_row.get("visit_name", "")),
-                analyte_name=str(first_row.get("analyte_name", "")),
-                ecrf_value=f"{count} duplicate entries",
-                lab_value=None,
-                ecrf_raw=first_row,
-                lab_raw=None,
-                explanation=f"Compound key (Study: {parts[0]}, Participant: {parts[1]}, Sample: {parts[2]}) appears {count} times in eCRF records.",
-                recommended_action="Inspect source eCRF entries with clinical data manager to verify repeat collection or eliminate duplicate submission.",
-            )
-        )
+            evidence_dict = {
+                "source": source_name,
+                "row_number": source_row_num,
+                "study_id": s_id,
+                "participant_id": p_id,
+                "sample_id": smp_id,
+                "collection_date": c_date,
+                "analyte": analyte,
+                "value": val,
+                "unit": unit,
+            }
 
-    lab_key_counts = pd.Series(lab_keys).value_counts()
-    for key_str, count in lab_key_counts[lab_key_counts > 1].items():
-        parts = key_str.split("::")
-        key_dict = {"study_id": parts[0], "participant_id": parts[1], "sample_id": parts[2]}
-        matching_rows = lab[
-            (lab["study_id"].astype(str).str.strip() == parts[0])
-            & (lab["participant_id"].astype(str).str.strip() == parts[1])
-            & (lab["sample_id"].astype(str).str.strip() == parts[2])
-        ]
-        first_row = matching_rows.iloc[0].to_dict()
-        findings.append(
-            Discrepancy(
-                id=next_id(),
-                rule_id="RULE-DUP-LAB",
-                rule_name="Duplicate Lab Identifier",
-                category="Identifier Integrity",
-                priority="HIGH",
-                key=key_dict,
-                site_id=str(first_row.get("site_id", "")),
-                visit_name=str(first_row.get("visit_name", "")),
-                analyte_name=str(first_row.get("analyte_name", "")),
-                ecrf_value=None,
-                lab_value=f"{count} duplicate entries",
-                ecrf_raw=None,
-                lab_raw=first_row,
-                explanation=f"Compound key (Study: {parts[0]}, Participant: {parts[1]}, Sample: {parts[2]}) appears {count} times in Central Laboratory records.",
-                recommended_action="Query Central Laboratory to clarify repeated accessioning or aliquot numbering.",
-            )
-        )
+            # Check for MISSING_IDENTIFIER
+            missing_ids = []
+            if _is_empty_or_na(s_id):
+                missing_ids.append("study_id")
+            if _is_empty_or_na(p_id):
+                missing_ids.append("participant_id")
+            if _is_empty_or_na(smp_id):
+                missing_ids.append("sample_id")
 
-    # 2. Build index mappings for 1:1 cross-comparison (taking first occurrence for key)
-    ecrf_dict: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
-    for _, row in ecrf.iterrows():
-        k = make_key(row)
-        if k not in ecrf_dict:
-            ecrf_dict[k] = row.to_dict()
-
-    lab_dict: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
-    for _, row in lab.iterrows():
-        k = make_key(row)
-        if k not in lab_dict:
-            lab_dict[k] = row.to_dict()
-
-    all_keys = set(ecrf_dict.keys()).union(set(lab_dict.keys()))
-    matched_count = 0
-
-    for key_tuple in sorted(all_keys):
-        key_dict = {"study_id": key_tuple[0], "participant_id": key_tuple[1], "sample_id": key_tuple[2]}
-        in_ecrf = key_tuple in ecrf_dict
-        in_lab = key_tuple in lab_dict
-
-        # Missing in Lab
-        if in_ecrf and not in_lab:
-            erow = ecrf_dict[key_tuple]
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-MISSING-LAB",
-                    rule_name="Missing in Central Lab",
-                    category="Record Completeness",
-                    priority="HIGH",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=str(erow.get("analyte_name", "")),
-                    ecrf_value=str(erow.get("reported_value", "")),
-                    lab_value=None,
-                    ecrf_raw=erow,
-                    lab_raw=None,
-                    explanation=f"Sample '{key_tuple[2]}' recorded in eCRF for participant '{key_tuple[1]}' has no matching accession record in Central Lab.",
-                    recommended_action="Confirm sample shipment receipt with central laboratory manifest or verify if sample was collected.",
+            if missing_ids:
+                findings.append(
+                    Finding(
+                        finding_id=make_finding_id(),
+                        discrepancy_type="MISSING_IDENTIFIER",
+                        study_id=_clean_str(s_id) or None,
+                        participant_id=_clean_str(p_id) or None,
+                        sample_id=_clean_str(smp_id) or None,
+                        severity="HIGH",
+                        description=f"{source_name} record at row {source_row_num} is missing required identifier(s): {', '.join(missing_ids)}.",
+                        ecrf_evidence=evidence_dict if source_name == "eCRF" else None,
+                        lab_evidence=evidence_dict if source_name == "Central Lab" else None,
+                        rule_triggered="RULE-MISSING-IDENTIFIER",
+                        suggested_investigation_step=f"Audit source {source_name} log to populate mandatory identifiers.",
+                    )
                 )
-            )
-            continue
+                valid_keyed_rows.append((source_row_num, None, evidence_dict))
+                continue
 
-        # Missing in eCRF
-        if in_lab and not in_ecrf:
-            lrow = lab_dict[key_tuple]
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-MISSING-ECRF",
-                    rule_name="Missing in eCRF",
-                    category="Record Completeness",
-                    priority="HIGH",
-                    key=key_dict,
-                    site_id=str(lrow.get("site_id", "")),
-                    visit_name=str(lrow.get("visit_name", "")),
-                    analyte_name=str(lrow.get("analyte_name", "")),
-                    ecrf_value=None,
-                    lab_value=str(lrow.get("lab_value", "")),
-                    ecrf_raw=None,
-                    lab_raw=lrow,
-                    explanation=f"Sample '{key_tuple[2]}' exists in Central Lab report, but no corresponding entry was found in eCRF.",
-                    recommended_action="Investigate whether site clinical coordinator missed logging the sample collection in eCRF.",
+            # Check for INVALID_DATE
+            parsed_dt, is_bad_dt = _parse_date(c_date)
+            if is_bad_dt:
+                findings.append(
+                    Finding(
+                        finding_id=make_finding_id(),
+                        discrepancy_type="INVALID_DATE",
+                        study_id=_clean_str(s_id),
+                        participant_id=_clean_str(p_id),
+                        sample_id=_clean_str(smp_id),
+                        severity="MEDIUM",
+                        description=f"{source_name} record at row {source_row_num} contains unparseable collection date '{c_date}'.",
+                        ecrf_evidence=evidence_dict if source_name == "eCRF" else None,
+                        lab_evidence=evidence_dict if source_name == "Central Lab" else None,
+                        rule_triggered="RULE-INVALID-DATE",
+                        suggested_investigation_step="Correct date formatting to standard ISO YYYY-MM-DD.",
+                    )
                 )
-            )
-            continue
 
-        # Present in both -> Compare field-level integrity
-        matched_count += 1
-        erow = ecrf_dict[key_tuple]
-        lrow = lab_dict[key_tuple]
-
-        ecrf_date_raw = erow.get("collection_date")
-        lab_date_raw = lrow.get("collection_date")
-        ecrf_dt = _parse_date(ecrf_date_raw)
-        lab_dt = _parse_date(lab_date_raw)
-
-        # Date validation check
-        if not _is_empty(ecrf_date_raw) and ecrf_dt is None:
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-INVALID-DATE",
-                    rule_name="Invalid eCRF Collection Date",
-                    category="Data Quality",
-                    priority="MEDIUM",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=str(erow.get("analyte_name", "")),
-                    ecrf_value=str(ecrf_date_raw),
-                    lab_value=str(lab_date_raw),
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"eCRF collection date '{ecrf_date_raw}' does not conform to standard ISO/clinical date formats.",
-                    recommended_action="Request site correction of malformed collection timestamp.",
-                )
-            )
-        elif not _is_empty(lab_date_raw) and lab_dt is None:
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-INVALID-DATE",
-                    rule_name="Invalid Lab Collection Date",
-                    category="Data Quality",
-                    priority="MEDIUM",
-                    key=key_dict,
-                    site_id=str(lrow.get("site_id", "")),
-                    visit_name=str(lrow.get("visit_name", "")),
-                    analyte_name=str(lrow.get("analyte_name", "")),
-                    ecrf_value=str(ecrf_date_raw),
-                    lab_value=str(lab_date_raw),
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"Central Lab collection date '{lab_date_raw}' is invalid or cannot be parsed.",
-                    recommended_action="Query Central Lab for corrected accession timestamp.",
-                )
-            )
-        elif ecrf_dt and lab_dt and ecrf_dt.date() != lab_dt.date():
-            # Date mismatch
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-DATE-MISMATCH",
-                    rule_name="Collection Date Mismatch",
-                    category="Protocol Adherence",
-                    priority="MEDIUM",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=str(erow.get("analyte_name", "")),
-                    ecrf_value=str(ecrf_date_raw),
-                    lab_value=str(lab_date_raw),
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"eCRF date '{ecrf_dt.date()}' differs from Central Lab date '{lab_dt.date()}'.",
-                    recommended_action="Cross-reference tube barcode time and laboratory intake requisition.",
-                )
-            )
-
-        # Analyte name match
-        ecrf_analyte = _clean_str(erow.get("analyte_name"))
-        lab_analyte = _clean_str(lrow.get("analyte_name"))
-        if ecrf_analyte.lower() != lab_analyte.lower():
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-ANALYTE-MISMATCH",
-                    rule_name="Analyte Name Mismatch",
-                    category="Analyte Concordance",
-                    priority="HIGH",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=f"{ecrf_analyte} vs {lab_analyte}",
-                    ecrf_value=ecrf_analyte,
-                    lab_value=lab_analyte,
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"Analyte names diverge: eCRF has '{ecrf_analyte}' while Central Lab reports '{lab_analyte}'.",
-                    recommended_action="Verify test requisition order code to ensure correct test panel mapping.",
-                )
-            )
-
-        # Missing values check
-        ecrf_val_raw = erow.get("reported_value")
-        lab_val_raw = lrow.get("lab_value")
-        ecrf_missing = _is_empty(ecrf_val_raw)
-        lab_missing = _is_empty(lab_val_raw)
-
-        if ecrf_missing and not lab_missing:
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-MISSING-VALUE",
-                    rule_name="Missing eCRF Value",
-                    category="Data Completeness",
-                    priority="MEDIUM",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=ecrf_analyte,
-                    ecrf_value="[EMPTY]",
-                    lab_value=str(lab_val_raw),
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"eCRF reported value is blank/null while Lab recorded '{lab_val_raw}'.",
-                    recommended_action="Request site coordinator to transcribe result from lab report to eCRF.",
-                )
-            )
-        elif lab_missing and not ecrf_missing:
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-MISSING-VALUE",
-                    rule_name="Missing Lab Value",
-                    category="Data Completeness",
-                    priority="HIGH",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=ecrf_analyte,
-                    ecrf_value=str(ecrf_val_raw),
-                    lab_value="[EMPTY]",
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"Central Lab result is empty/pending while eCRF has '{ecrf_val_raw}'.",
-                    recommended_action="Confirm if sample analysis is pending, hemolyzed, or cancelled by the lab.",
-                )
-            )
-
-        # Unit mismatch
-        ecrf_unit = _clean_str(erow.get("unit"))
-        lab_unit = _clean_str(lrow.get("unit"))
-        if ecrf_unit.lower() != lab_unit.lower() and not _is_empty(ecrf_unit) and not _is_empty(lab_unit):
-            findings.append(
-                Discrepancy(
-                    id=next_id(),
-                    rule_id="RULE-UNIT-MISMATCH",
-                    rule_name="Unit of Measure Mismatch",
-                    category="Analyte Concordance",
-                    priority="HIGH",
-                    key=key_dict,
-                    site_id=str(erow.get("site_id", "")),
-                    visit_name=str(erow.get("visit_name", "")),
-                    analyte_name=ecrf_analyte,
-                    ecrf_value=ecrf_unit,
-                    lab_value=lab_unit,
-                    ecrf_raw=erow,
-                    lab_raw=lrow,
-                    explanation=f"Unit divergence detected: eCRF is '{ecrf_unit}' vs Central Lab '{lab_unit}'. Direct comparison may lead to clinical misinterpretation.",
-                    recommended_action="Harmonize reporting unit or apply validated clinical unit conversion factor.",
-                )
-            )
-
-        # Numeric value discrepancy
-        if not ecrf_missing and not lab_missing and ecrf_unit.lower() == lab_unit.lower():
-            try:
-                num_ecrf = float(ecrf_val_raw)
-                num_lab = float(lab_val_raw)
-                delta = abs(num_ecrf - num_lab)
-                if delta > numeric_tolerance:
+            # Check for INVALID_NUMERIC_VALUE when non-empty
+            if not _is_empty_or_na(val):
+                _, is_bad_num = _parse_numeric(val)
+                if is_bad_num:
                     findings.append(
-                        Discrepancy(
-                            id=next_id(),
-                            rule_id="RULE-VALUE-MISMATCH",
-                            rule_name="Numeric Value Difference",
-                            category="Value Consistency",
-                            priority="HIGH" if delta > 1.0 else "MEDIUM",
-                            key=key_dict,
-                            site_id=str(erow.get("site_id", "")),
-                            visit_name=str(erow.get("visit_name", "")),
-                            analyte_name=ecrf_analyte,
-                            ecrf_value=str(num_ecrf),
-                            lab_value=str(num_lab),
-                            ecrf_raw=erow,
-                            lab_raw=lrow,
-                            explanation=f"Value discrepancy: eCRF '{num_ecrf}' vs Lab '{num_lab}' (absolute difference: {delta:.4f} {ecrf_unit}).",
-                            recommended_action="Audit source transcript and re-verify primary instrument export.",
+                        Finding(
+                            finding_id=make_finding_id(),
+                            discrepancy_type="INVALID_NUMERIC_VALUE",
+                            study_id=_clean_str(s_id),
+                            participant_id=_clean_str(p_id),
+                            sample_id=_clean_str(smp_id),
+                            severity="HIGH",
+                            description=f"{source_name} record at row {source_row_num} contains non-numeric result value '{val}'.",
+                            ecrf_evidence=evidence_dict if source_name == "eCRF" else None,
+                            lab_evidence=evidence_dict if source_name == "Central Lab" else None,
+                            rule_triggered="RULE-INVALID-NUMERIC-VALUE",
+                            suggested_investigation_step="Inspect laboratory instrument transcript for data transcription errors.",
                         )
                     )
-            except (ValueError, TypeError):
-                # Non-numeric comparison fallback
-                str_ecrf = _clean_str(ecrf_val_raw)
-                str_lab = _clean_str(lab_val_raw)
-                if str_ecrf != str_lab:
+
+            compound_key = (_clean_str(s_id), _clean_str(p_id), _clean_str(smp_id))
+            valid_keyed_rows.append((source_row_num, compound_key, evidence_dict))
+
+        return valid_keyed_rows
+
+    ecrf_processed = process_source_row_integrity(ecrf, "eCRF", "reported_value")
+    lab_processed = process_source_row_integrity(lab, "Central Lab", "lab_value")
+
+    # 2. Duplicate Key Detection
+    ecrf_key_map: Dict[Tuple[str, str, str], List[Tuple[int, Dict[str, Any]]]] = {}
+    for r_num, k, ev in ecrf_processed:
+        if k:
+            ecrf_key_map.setdefault(k, []).append((r_num, ev))
+
+    lab_key_map: Dict[Tuple[str, str, str], List[Tuple[int, Dict[str, Any]]]] = {}
+    for r_num, k, ev in lab_processed:
+        if k:
+            lab_key_map.setdefault(k, []).append((r_num, ev))
+
+    for k, entries in ecrf_key_map.items():
+        if len(entries) > 1:
+            rows_str = ", ".join(str(e[0]) for e in entries)
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="DUPLICATE_KEY",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Duplicate compound key (Study: {k[0]}, Participant: {k[1]}, Sample: {k[2]}) found in eCRF at rows [{rows_str}].",
+                    ecrf_evidence=entries[0][1],
+                    lab_evidence=None,
+                    rule_triggered="RULE-DUPLICATE-KEY",
+                    suggested_investigation_step="Review site data entry logs to identify and remove duplicated record.",
+                )
+            )
+
+    for k, entries in lab_key_map.items():
+        if len(entries) > 1:
+            rows_str = ", ".join(str(e[0]) for e in entries)
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="DUPLICATE_KEY",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Duplicate compound key (Study: {k[0]}, Participant: {k[1]}, Sample: {k[2]}) found in Central Lab at rows [{rows_str}].",
+                    ecrf_evidence=None,
+                    lab_evidence=entries[0][1],
+                    rule_triggered="RULE-DUPLICATE-KEY",
+                    suggested_investigation_step="Clarify multiple aliquots or re-accessioning with central laboratory.",
+                )
+            )
+
+    # 3. Cross-Source Matching & Record Presence
+    all_keys = set(ecrf_key_map.keys()).union(set(lab_key_map.keys()))
+    matched_count = 0
+
+    for k in sorted(all_keys):
+        in_ecrf = k in ecrf_key_map
+        in_lab = k in lab_key_map
+
+        if in_ecrf and not in_lab:
+            ev = ecrf_key_map[k][0][1]
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="MISSING_LAB_RECORD",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Sample '{k[2]}' recorded in eCRF (row {ev['row_number']}) is absent in Central Lab records.",
+                    ecrf_evidence=ev,
+                    lab_evidence=None,
+                    rule_triggered="RULE-MISSING-LAB-RECORD",
+                    suggested_investigation_step="Verify sample receipt in Central Lab accession manifest.",
+                )
+            )
+            continue
+
+        if in_lab and not in_ecrf:
+            ev = lab_key_map[k][0][1]
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="MISSING_ECRF_RECORD",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Sample '{k[2]}' received in Central Lab (row {ev['row_number']}) is missing from eCRF.",
+                    ecrf_evidence=None,
+                    lab_evidence=ev,
+                    rule_triggered="RULE-MISSING-ECRF-RECORD",
+                    suggested_investigation_step="Check if site clinical coordinator omitted logging sample collection.",
+                )
+            )
+            continue
+
+        # Present in both sources
+        # If duplicates existed on either side, handle explicitly: flag the match count based on unique compound keys
+        matched_count += 1
+        e_entry = ecrf_key_map[k][0][1]
+        l_entry = lab_key_map[k][0][1]
+
+        # 4. Field-level Comparison Rules
+        # A. Date comparison (date-only comparison)
+        e_dt, e_bad_dt = _parse_date(e_entry["collection_date"])
+        l_dt, l_bad_dt = _parse_date(l_entry["collection_date"])
+        if e_dt and l_dt and e_dt != l_dt:
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="DATE_MISMATCH",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="MEDIUM",
+                    description=f"Collection date mismatch: eCRF has {e_dt.isoformat()} while Lab has {l_dt.isoformat()}.",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-DATE-MISMATCH",
+                    suggested_investigation_step="Cross-reference tube barcode timestamp against clinic intake sheet.",
+                )
+            )
+
+        # B. Analyte comparison (conservative comparison)
+        e_analyte = _clean_str(e_entry["analyte"])
+        l_analyte = _clean_str(l_entry["analyte"])
+        if e_analyte and l_analyte and e_analyte.lower() != l_analyte.lower():
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="ANALYTE_MISMATCH",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Analyte names disagree: eCRF recorded '{e_analyte}' but Central Lab reported '{l_analyte}'.",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-ANALYTE-MISMATCH",
+                    suggested_investigation_step="Review laboratory order code mapping for this protocol visit.",
+                )
+            )
+
+        # C. Missing values check
+        e_val_str = e_entry["value"]
+        l_val_str = l_entry["value"]
+        e_is_empty = _is_empty_or_na(e_val_str)
+        l_is_empty = _is_empty_or_na(l_val_str)
+
+        if e_is_empty and not l_is_empty:
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="MISSING_VALUE",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="MEDIUM",
+                    description=f"eCRF result value is blank while Central Lab has '{l_val_str}'.",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-MISSING-VALUE",
+                    suggested_investigation_step="Prompt clinical research coordinator to transcribe result value into eCRF.",
+                )
+            )
+        elif l_is_empty and not e_is_empty:
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="MISSING_VALUE",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Central Lab result is pending or empty while eCRF recorded '{e_val_str}'.",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-MISSING-VALUE",
+                    suggested_investigation_step="Verify if lab sample was rejected, hemolyzed, or still in process.",
+                )
+            )
+
+        # D. Unit comparison (conservative, no guessing conversions)
+        e_unit = _clean_str(e_entry["unit"])
+        l_unit = _clean_str(l_entry["unit"])
+        unit_compatible = True
+        if _is_empty_or_na(e_unit) or _is_empty_or_na(l_unit):
+            unit_compatible = False
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="UNIT_MISMATCH",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Missing or unspecified unit of measure (eCRF: '{e_unit}', Lab: '{l_unit}').",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-UNIT-MISMATCH",
+                    suggested_investigation_step="Confirm standard protocol unit of measure before comparing values.",
+                )
+            )
+        elif e_unit.lower() != l_unit.lower():
+            unit_compatible = False
+            findings.append(
+                Finding(
+                    finding_id=make_finding_id(),
+                    discrepancy_type="UNIT_MISMATCH",
+                    study_id=k[0],
+                    participant_id=k[1],
+                    sample_id=k[2],
+                    severity="HIGH",
+                    description=f"Unit mismatch: eCRF is '{e_unit}' vs Central Lab '{l_unit}'. Unverified unit conversion prohibited.",
+                    ecrf_evidence=e_entry,
+                    lab_evidence=l_entry,
+                    rule_triggered="RULE-UNIT-MISMATCH",
+                    suggested_investigation_step="Verify protocol specification for authorized unit conversion.",
+                )
+            )
+
+        # E. Numeric value comparison (only when units are compatible and both values are valid numbers)
+        if unit_compatible and not e_is_empty and not l_is_empty:
+            e_num, e_num_bad = _parse_numeric(e_val_str)
+            l_num, l_num_bad = _parse_numeric(l_val_str)
+
+            if not e_num_bad and not l_num_bad and e_num is not None and l_num is not None:
+                delta = abs(e_num - l_num)
+                if delta > numeric_tolerance:
                     findings.append(
-                        Discrepancy(
-                            id=next_id(),
-                            rule_id="RULE-VALUE-MISMATCH",
-                            rule_name="Text Value Mismatch",
-                            category="Value Consistency",
-                            priority="MEDIUM",
-                            key=key_dict,
-                            site_id=str(erow.get("site_id", "")),
-                            visit_name=str(erow.get("visit_name", "")),
-                            analyte_name=ecrf_analyte,
-                            ecrf_value=str_ecrf,
-                            lab_value=str_lab,
-                            ecrf_raw=erow,
-                            lab_raw=lrow,
-                            explanation=f"Recorded textual values do not match: eCRF '{str_ecrf}' vs Lab '{str_lab}'.",
-                            recommended_action="Inspect qualitative result notation across sources.",
+                        Finding(
+                            finding_id=make_finding_id(),
+                            discrepancy_type="VALUE_MISMATCH",
+                            study_id=k[0],
+                            participant_id=k[1],
+                            sample_id=k[2],
+                            severity="HIGH" if delta > 1.0 else "MEDIUM",
+                            description=f"Numeric value mismatch: eCRF recorded {e_num} while Central Lab reported {l_num} (delta: {delta:.4f} {e_unit}, tolerance: {numeric_tolerance}).",
+                            ecrf_evidence=e_entry,
+                            lab_evidence=l_entry,
+                            rule_triggered="RULE-VALUE-MISMATCH",
+                            suggested_investigation_step="Investigate transcription or instrument calibration discrepancy.",
                         )
                     )
 
     # Compile Summary
-    by_rule: Dict[str, int] = {}
-    by_priority: Dict[str, int] = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
     by_category: Dict[str, int] = {}
+    by_priority: Dict[str, int] = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    by_rule: Dict[str, int] = {}
 
     for f in findings:
-        by_rule[f.rule_id] = by_rule.get(f.rule_id, 0) + 1
-        by_priority[f.priority] = by_priority.get(f.priority, 0) + 1
-        by_category[f.category] = by_category.get(f.category, 0) + 1
+        by_category[f.discrepancy_type] = by_category.get(f.discrepancy_type, 0) + 1
+        by_priority[f.severity] = by_priority.get(f.severity, 0) + 1
+        by_rule[f.rule_triggered] = by_rule.get(f.rule_triggered, 0) + 1
 
-    summary = ReconciliationSummary(
-        total_ecrf_records=len(ecrf),
-        total_lab_records=len(lab),
-        matched_records=matched_count,
-        total_discrepancies=len(findings),
-        discrepancies_by_rule=by_rule,
-        discrepancies_by_priority=by_priority,
-        discrepancies_by_category=by_category,
+    summary_dict = {
+        "total_ecrf_records": len(ecrf),
+        "total_lab_records": len(lab),
+        "matched_records": matched_count,
+        "total_discrepancies": len(findings),
+        "discrepancies_by_category": by_category,
+        "discrepancies_by_priority": by_priority,
+        "discrepancies_by_rule": by_rule,
+    }
+
+    result = {
+        "summary": summary_dict,
+        "discrepancies": [f.model_dump() for f in findings],
+        "source_row_counts": {
+            "ecrf_rows": len(ecrf),
+            "lab_rows": len(lab),
+        },
+        "reconciliation_metadata": {
+            "engine_version": "1.0.0",
+            "executed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "numeric_tolerance": numeric_tolerance,
+            "matching_keys": ["study_id", "participant_id", "sample_id"],
+        },
+    }
+
+    return result
+
+
+def reconcile(
+    ecrf_df: pd.DataFrame,
+    lab_df: pd.DataFrame,
+    numeric_tolerance: float = DEFAULT_NUMERIC_TOLERANCE,
+) -> ReconciliationResult:
+    """Object-based reconcile wrapper returning ReconciliationResult for backwards compatibility."""
+    res_dict = reconcile_data(ecrf_df, lab_df, numeric_tolerance)
+    summary = ReconciliationSummary(**res_dict["summary"])
+    discrepancies = [Finding(**d) for d in res_dict["discrepancies"]]
+    return ReconciliationResult(
+        summary=summary,
+        discrepancies=discrepancies,
+        reconciliation_metadata=res_dict["reconciliation_metadata"],
+        source_row_counts=res_dict["source_row_counts"],
     )
-
-    return ReconciliationResult(summary=summary, discrepancies=findings)
