@@ -1,0 +1,23 @@
+study_id,site_id,participant_id,visit_name,sample_id,collection_date,analyte_name,lab_value,unit
+RCX-101,SITE-01,PT-1001,Screening,SMP-9001,2026-03-01,Hemoglobin,14.2,g/dL
+RCX-101,SITE-01,PT-1002,Screening,SMP-9002,2026-03-01,Alanine Aminotransferase,28.0,U/L
+RCX-101,SITE-01,PT-1003,Screening,SMP-9003,2026-03-02,Creatinine,0.92,mg/dL
+RCX-101,SITE-01,PT-1004,Screening,SMP-9004,2026-03-02,Glucose,95.0,mg/dL
+RCX-101,SITE-02,PT-1005,Screening,SMP-9005,2026-03-03,Platelets,240.0,10^3/uL
+RCX-101,SITE-02,PT-1006,Screening,SMP-9006,2026-03-03,Potassium,4.1,mmol/L
+RCX-101,SITE-02,PT-1007,Screening,SMP-9007,2026-03-04,Sodium,140.0,mmol/L
+RCX-101,SITE-02,PT-1008,Screening,SMP-9008,2026-03-04,Albumin,4.2,g/dL
+RCX-101,SITE-03,PT-1009,Screening,SMP-9009,2026-03-05,Total Bilirubin,0.7,mg/dL
+RCX-101,SITE-03,PT-1010,Screening,SMP-9010,2026-03-05,Alkaline Phosphatase,72.0,U/L
+RCX-101,SITE-03,PT-1011,Screening,SMP-9011,2026-03-08,White Blood Cells,6.5,10^3/uL
+RCX-101,SITE-03,PT-1012,Screening,SMP-9012,2026-03-06,Hematocrit,41.5,%
+RCX-101,SITE-01,PT-1013,Screening,SMP-9013,2026-03-07,Glucose,128.0,mg/dL
+RCX-101,SITE-01,PT-1014,Screening,SMP-9014,2026-03-07,Creatinine,92.8,umol/L
+RCX-101,SITE-02,PT-1015,Screening,SMP-9015,2026-03-08,Alanine Aminotransferase,,U/L
+RCX-101,SITE-02,PT-1016,Screening,SMP-9016,2026-03-08,Potassium,4.4,mmol/L
+RCX-101,SITE-03,PT-1017,Screening,SMP-9017,2026-03-09,Platelets,215.0,10^3/uL
+RCX-101,SITE-03,PT-1018,Screening,SMP-9018,2026-03-09,Sodium,138.0,mmol/L
+RCX-101,SITE-01,PT-1020,Screening,SMP-9020,2026-03-10,Albumin,4.0,g/dL
+RCX-101,SITE-02,PT-1021,Screening,SMP-9021,2026-03-11,Total Bilirubin,0.8,mg/dL
+RCX-101,SITE-04,PT-1022,Screening,SMP-9022,2026-03-12,Hemoglobin,13.2,g/dL
+RCX-101,SITE-04,PT-1023,Screening,SMP-9023,2026-03-12,Glucose,99.0,mg/dL
