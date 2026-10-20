@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Reconciliation from './pages/Reconciliation';
 import Findings from './pages/Findings';
@@ -9,10 +10,11 @@ import Reports from './pages/Reports';
 import FindingDetail from './components/FindingDetail';
 import { fetchHealth, submitFindingReview } from './services/api';
 import { UserCheck } from 'lucide-react';
+import logoImg from './assets/logo.png';
 import './index.css';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('overview');
+  const [currentTab, setCurrentTab] = useState('home');
   const [reconResult, setReconResult] = useState(null);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [backendStatus, setBackendStatus] = useState('checking'); // 'healthy' | 'unreachable' | 'checking'
@@ -108,6 +110,11 @@ export default function App() {
         {/* Top Header */}
         <header className="top-header">
           <div className="header-left">
+            <img 
+              src={logoImg} 
+              alt="Logo" 
+              style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} 
+            />
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--navy-900)' }}>
               ReconX Studio
             </span>
@@ -154,6 +161,13 @@ export default function App() {
 
         {/* Tab Body */}
         <main className="page-body">
+          {currentTab === 'home' && (
+            <Home 
+              onEnterDashboard={() => setCurrentTab('overview')}
+              onStartRecon={() => setCurrentTab('reconciliation')}
+            />
+          )}
+
           {currentTab === 'overview' && (
             <Dashboard
               reconResult={reconResult}

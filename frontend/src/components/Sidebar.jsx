@@ -1,4 +1,5 @@
 import { 
+  Home,
   LayoutDashboard, 
   GitCompare, 
   AlertTriangle, 
@@ -7,8 +8,10 @@ import {
   FileSpreadsheet,
   Activity
 } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 const navItems = [
+  { id: 'home', label: 'Home / About', icon: Home },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'reconciliation', label: 'Reconciliation', icon: GitCompare },
   { id: 'findings', label: 'Findings', icon: AlertTriangle },
@@ -29,27 +32,30 @@ export default function Sidebar({ currentTab, onSelectTab, findingsCount, pendin
       borderRight: '1px solid var(--navy-800)',
     }}>
       {/* Brand Header */}
-      <div style={{
-        padding: '24px 20px',
-        borderBottom: '1px solid var(--navy-800)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '8px',
-          backgroundColor: 'var(--teal-600)',
+      <div 
+        onClick={() => onSelectTab('home')}
+        style={{
+          padding: '20px 18px',
+          borderBottom: '1px solid var(--navy-800)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontWeight: 'bold',
-          fontSize: '18px',
-        }}>
-          R
-        </div>
+          gap: '12px',
+          cursor: 'pointer',
+        }}
+      >
+        <img 
+          src={logoImg} 
+          alt="ReconX Logo" 
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            objectFit: 'contain',
+            backgroundColor: '#ffffff',
+            padding: '2px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }} 
+        />
         <div>
           <div style={{ fontWeight: '700', fontSize: '18px', letterSpacing: '-0.5px' }}>
             Recon<span style={{ color: 'var(--teal-400)' }}>X</span>
