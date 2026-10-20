@@ -4,53 +4,78 @@
 
 🌐 **Live Deployed Application**: [https://main.d2f4yaeel8u9pw.amplifyapp.com/](https://main.d2f4yaeel8u9pw.amplifyapp.com/)
 
-ReconX is an enterprise-grade clinical data intelligence application designed for clinical data managers and trial monitors. It provides deterministic, AI-assisted comparison of synthetic electronic Case Report Form (eCRF) records against synthetic Central Laboratory datasets, detects discrepancies, explains factual evidence, and enables human-reviewed adjudication with a tamper-evident audit trail.
+ReconX is an enterprise-grade clinical data intelligence platform designed for Clinical Data Managers (CDMs) and Clinical Trial Monitors. It delivers deterministic, AI-assisted cross-reconciliation between electronic Case Report Form (eCRF) records and Central Laboratory datasets, detects discrepancies across 11 regulatory categories, explains factual evidence with clinical safety constraints, and guarantees an immutable, audit-ready paper trail powered by Supabase PostgreSQL.
 
 ---
 
-## 🚀 Live Demo & Deployment
-- **Frontend & App Host**: AWS Amplify ([Live Site](https://main.d2f4yaeel8u9pw.amplifyapp.com/))
-- **Database & Cloud Storage**: Supabase PostgreSQL (`vjshgqdtshyhhnpjfbzv.supabase.co`)
-- **Engine Architecture**: Dual-execution support — runs deterministically in-browser for zero-server deployments (AWS Amplify) as well as natively via Python FastAPI (`backend/`).
+## 🚀 Live Demo & Infrastructure
+- **Live Application Host**: [AWS Amplify (Production Site)](https://main.d2f4yaeel8u9pw.amplifyapp.com/)
+- **Cloud Database**: [Supabase PostgreSQL Cluster](https://supabase.com) (`vjshgqdtshyhhnpjfbzv.supabase.co`)
+- **Interactive Visual Engine**: WebGL2 custom **Binary Orbits** 3D cosmic galaxy simulation with real-time particle physics and starlight bloom
+- **Hybrid Architecture**: Dual-execution design — runs client-side in browser for zero-server deployments (AWS Amplify) with optional high-performance Python FastAPI backend (`backend/`)
+
+---
+
+## 🌌 Interactive Visual Experience (Binary Orbits)
+
+ReconX features an interactive WebGL2 3D simulation of a tilted spiral galaxy ([`BinaryOrbits.jsx`](frontend/src/components/BinaryOrbits.jsx)) embedded as a persistent cosmic background behind modern glassmorphism UI cards:
+
+- **70,000 Streaming Stars**: Rendered using GPU instanced interleaved buffers and custom GLSL3 vertex/fragment shaders.
+- **Differential Keplerian Rotation**: Stars rotate with velocity inversely proportional to core distance:
+  $$\omega(a) = \frac{uSpin}{\sqrt{a^2 + uCoreRadius^2}}$$
+  Inner core stars orbit faster while 3 logarithmic spiral arms continuously sweep through cosmic space.
+- **Dynamic Gravitational Hover Wakes**: Sweeping the cursor over the galaxy displaces nearby star orbits with a gravitational drag vector, accelerating rotation (`hoverBoost = 0.5`) and kindling stars into brilliant magenta-pink (`#FFC2EE`) and violet (`#7B4DFF`) OKLab hues.
+- **Click Ripple Shockwaves**: Clicking anywhere on the screen propagates expanding gravitational wave rings across the galaxy arms, causing stars along the wave front to flare with high-energy starlight.
+- **Multi-Pass Bloom Pyramid**: GPU downsample and upsample blur passes provide authentic radiant glow, central core luminescence, and subtle cinematic dither.
 
 ---
 
 ## 🌟 Key Features
 
-1. **Deterministic Clinical Reconciliation Engine (`reconEngine.js` & `backend/recon.py`)**:
-   - Compound primary key matching based on `(study_id, participant_id, sample_id)`.
-   - Comprehensive rule-based discrepancy categorization:
-     - `MISSING_IDENTIFIER`: Required primary identifiers missing in source records.
-     - `DUPLICATE_KEY`: Duplicate compound identifiers detected within the same source.
-     - `MISSING_ECRF_RECORD`: Sample present in Central Lab but missing from eCRF.
-     - `MISSING_LAB_RECORD`: Sample recorded in eCRF with no Central Lab accession.
-     - `INVALID_DATE`: Unparseable or malformed collection timestamps.
-     - `DATE_MISMATCH`: Collection dates diverge between eCRF and Lab.
-     - `ANALYTE_MISMATCH`: Analyte naming inconsistencies.
-     - `MISSING_VALUE`: Missing or null result values.
-     - `INVALID_NUMERIC_VALUE`: Non-numeric entries where quantitative values are expected.
-     - `UNIT_MISMATCH`: Divergent units of measure without unverified automated conversions.
-     - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
-   - Preserves source datasets as immutable records (no in-place mutations or silent overwrites).
+### 1. Deterministic Clinical Reconciliation Engine (`reconEngine.js` & `backend/recon.py`)
+- **Compound Identifier Matching**: Joins records across `(study_id, participant_id, sample_id)`.
+- **11 Regulatory Discrepancy Categories Detected**:
+  - `MISSING_IDENTIFIER`: Required primary identifiers missing in source records.
+  - `DUPLICATE_KEY`: Duplicate compound identifiers detected within the same source.
+  - `MISSING_ECRF_RECORD`: Sample present in Central Lab but missing from eCRF.
+  - `MISSING_LAB_RECORD`: Sample recorded in eCRF with no Central Lab accession.
+  - `INVALID_DATE`: Unparseable or malformed collection timestamps.
+  - `DATE_MISMATCH`: Collection dates diverge between eCRF and Central Lab.
+  - `ANALYTE_MISMATCH`: Analyte biomarker naming inconsistencies.
+  - `MISSING_VALUE`: Missing or null result values where expected.
+  - `INVALID_NUMERIC_VALUE`: Non-numeric entries where quantitative values are expected.
+  - `UNIT_MISMATCH`: Divergent units of measure without unverified automated conversions.
+  - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
+- **Data Immutability**: Source datasets are preserved as immutable records with zero in-place mutations or silent algorithmic overwrites.
 
-2. **Persistent Cloud Database (Supabase PostgreSQL)**:
-   - Dedicated cloud storage for all reconciliation sessions (`reconciliations` table).
-   - Real-time immutable audit trail (`audit_trail` table) tracking timestamps, finding IDs, reviewer handles, previous and new review statuses, and mandatory reviewer rationales.
+### 2. Persistent Cloud Database (Supabase PostgreSQL)
+- **Session Persistence**: Complete reconciliation results, summary metrics, and discrepancies persist to the Supabase `reconciliations` table.
+- **Immutable Audit Trail**: All human review decisions, timestamps, reviewer handles, previous and new review statuses, and mandatory rationales are permanently written to the `audit_trail` table.
+- **Zero-Downtime Resilience**: Automatic seamless fallback to local in-memory storage if cloud connectivity is interrupted.
 
-3. **Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)**:
-   - Operates strictly on minimal, de-identified finding evidence.
-   - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
-   - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
+### 3. Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)
+- Operates strictly on minimal, de-identified finding evidence.
+- Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
+- **Strict Clinical Safety Constraints**: Never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
-4. **Clinical Data Intelligence Workspace (`frontend/`)**:
-   - Built with **React 19**, **Three.js**, **Vite**, **Lucide Icons**, and **Recharts**.
-   - **Modern Interactive Home Page (`Home.jsx`)**: Powered by a custom WebGL2 **Binary Orbits** 3D cosmic spiral galaxy background (`BinaryOrbits.jsx`) featuring 70,000 streaming stars, OKLab color blending, bloom downsample/upsample passes, dynamic starfield physics, interactive cursor hover-wakes, and click ripple shockwaves.
-   - Restrained enterprise design system (navy, slate, teal palette with accessible contrast and glassmorphism cards).
-   - Dynamic dashboard featuring KPI metrics, discrepancy breakdown charts, and review queue donut charts.
-   - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
-   - Human review workflow enforcing mandatory reviewer rationales and preventing double-submission.
-   - Traceable Audit Trail table displaying previous and new review statuses.
-   - Regulatory-compliant, formula-injection safe CSV export functionality.
+### 4. Enterprise Review & Reporting Workspace (`frontend/`)
+- Built with **React 19**, **Three.js**, **Vite**, **Lucide Icons**, and **Recharts**.
+- Dynamic dashboard with KPI metrics, discrepancy breakdown charts, and review status donut charts.
+- Searchable, filterable, sortable findings table with slide-in evidence inspection drawer.
+- Human review workflow enforcing mandatory reviewer rationales and preventing double-submission.
+- Traceable Audit Trail table displaying previous and new review statuses.
+- Formula-injection safe CSV export protecting downstream spreadsheets from formula triggers (`=`, `+`, `-`, `@`).
+
+---
+
+## 👥 Who Uses ReconX?
+
+| User Persona | Role & Objectives | How ReconX Solves It |
+|---|---|---|
+| **Clinical Data Manager (CDM)** | Ensures trial data integrity and regulatory compliance for study closeout. | Deterministically reconciles thousands of eCRF and Lab records in seconds; provides instant discrepancy summaries. |
+| **Clinical Research Associate (CRA / Monitor)** | Verifies protocol compliance and sample accessioning at investigative sites. | Tracks missing lab samples (`MISSING_LAB_RECORD`) or unrecorded lab accessions (`MISSING_ECRF_RECORD`) to issue targeted site queries. |
+| **Clinical Safety Reviewer** | Investigates safety biomarker shifts and reporting anomalies. | Compares analyte discrepancies and collection dates side-by-side with structured AI hypothesis evidence. |
+| **Data Operations & Biostatistics** | Validates datasets for statistical analysis and FDA/EMA regulatory submission. | Generates formula-injection sanitized CSV audit reports with immutable Supabase audit histories. |
 
 ---
 
@@ -107,17 +132,17 @@ reconx/
 
 ## 🚀 Getting Started
 
-### 1. Web Application (Live)
+### 1. Web Application (Live Deployment)
 Simply visit: **[https://main.d2f4yaeel8u9pw.amplifyapp.com/](https://main.d2f4yaeel8u9pw.amplifyapp.com/)**
 
 ### 2. Local Frontend Setup
 ```powershell
 cd f:\reconx\frontend
 
-# Install dependencies
+# Install dependencies (React 19, Three.js, Lucide, Recharts)
 npm install
 
-# Start development server
+# Start local development server
 npm run dev
 ```
 Open **`http://localhost:5173`** in your browser.
@@ -129,7 +154,7 @@ cd f:\reconx
 # Activate virtual environment
 .\.venv\Scripts\Activate.ps1
 
-# Install dependencies
+# Install backend dependencies
 pip install -r backend/requirements.txt
 
 # Run the FastAPI server
