@@ -43,8 +43,9 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
    - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
 4. **Clinical Data Intelligence Workspace (`frontend/`)**:
-   - Built with **React 19**, **Vite**, **Lucide Icons**, and **Recharts**.
-   - Restrained enterprise design system (navy, slate, teal palette with accessible contrast).
+   - Built with **React 19**, **Three.js**, **Vite**, **Lucide Icons**, and **Recharts**.
+   - **Modern Interactive Home Page (`Home.jsx`)**: Powered by a custom WebGL2 **Binary Orbits** 3D cosmic spiral galaxy background (`BinaryOrbits.jsx`) featuring 70,000 streaming stars, OKLab color blending, bloom downsample/upsample passes, dynamic starfield physics, interactive cursor hover-wakes, and click ripple shockwaves.
+   - Restrained enterprise design system (navy, slate, teal palette with accessible contrast and glassmorphism cards).
    - Dynamic dashboard featuring KPI metrics, discrepancy breakdown charts, and review queue donut charts.
    - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
    - Human review workflow enforcing mandatory reviewer rationales and preventing double-submission.
@@ -76,6 +77,7 @@ reconx/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── BinaryOrbits.jsx  # WebGL2 tilted 3D spiral galaxy background simulation
 │   │   │   ├── FindingDetail.jsx # Slide-in drawer with evidence comparison & AI assistant
 │   │   │   ├── FindingsTable.jsx # Searchable & filterable findings table
 │   │   │   ├── Sidebar.jsx       # Responsive navigation sidebar
@@ -85,6 +87,7 @@ reconx/
 │   │   │   ├── AuditTrail.jsx    # Audit event history
 │   │   │   ├── Dashboard.jsx     # Overview with Recharts analytics
 │   │   │   ├── Findings.jsx      # Discrepancy findings explorer
+│   │   │   ├── Home.jsx          # Interactive cosmic landing page with Binary Orbits
 │   │   │   ├── Reconciliation.jsx# Reconciliation run setup
 │   │   │   ├── Reports.jsx       # Export and run summary
 │   │   │   └── ReviewQueue.jsx   # Human review queue

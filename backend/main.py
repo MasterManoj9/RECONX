@@ -314,6 +314,7 @@ async def record_human_review(review: ReviewRequest):
                     disc["reviewed_at"] = now_iso
                     finding_updated = True
                     break
+            store.save_reconciliation(review.reconciliation_id, recon)
 
     audit_event = {
         "event_id": f"EVT-{uuid.uuid4().hex[:8].upper()}",
