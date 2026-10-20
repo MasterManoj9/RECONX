@@ -1,5 +1,4 @@
 import { 
-  Home,
   LayoutDashboard, 
   GitCompare, 
   AlertTriangle, 
@@ -11,7 +10,6 @@ import {
 import logoImg from '../assets/logo.png';
 
 const navItems = [
-  { id: 'home', label: 'Home / About', icon: Home },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'reconciliation', label: 'Reconciliation', icon: GitCompare },
   { id: 'findings', label: 'Findings', icon: AlertTriangle },
@@ -33,7 +31,7 @@ export default function Sidebar({ currentTab, onSelectTab, findingsCount, pendin
     }}>
       {/* Brand Header */}
       <div 
-        onClick={() => onSelectTab('home')}
+        onClick={() => onSelectTab('overview')}
         style={{
           padding: '20px 18px',
           borderBottom: '1px solid var(--navy-800)',
@@ -42,6 +40,7 @@ export default function Sidebar({ currentTab, onSelectTab, findingsCount, pendin
           gap: '12px',
           cursor: 'pointer',
         }}
+        title="Click to view Overview Dashboard"
       >
         <img 
           src={logoImg} 

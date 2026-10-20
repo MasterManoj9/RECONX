@@ -12,7 +12,84 @@ import logoImg from '../assets/logo.png';
 
 export default function Home({ onEnterDashboard, onStartRecon }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', paddingBottom: '40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0f1d', color: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+      {/* Top Navbar for Home */}
+      <header style={{
+        height: '72px',
+        padding: '0 48px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(10, 15, 29, 0.85)',
+        backdropFilter: 'blur(12px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img 
+            src={logoImg} 
+            alt="ReconX" 
+            style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#fff', padding: '2px' }} 
+          />
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>
+              Recon<span style={{ color: 'var(--teal-400)' }}>X</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--slate-400)', marginTop: '-2px' }}>
+              Clinical Data Intelligence
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <a
+            href="#how-it-works"
+            style={{
+              color: 'var(--slate-300)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              padding: '8px 12px',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.target.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.target.style.color = 'var(--slate-300)')}
+          >
+            How It Works
+          </a>
+
+          <a
+            href="#rules"
+            style={{
+              color: 'var(--slate-300)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              padding: '8px 12px',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.target.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.target.style.color = 'var(--slate-300)')}
+          >
+            Discrepancy Rules
+          </a>
+
+          <button
+            type="button"
+            onClick={onEnterDashboard}
+            className="btn btn-primary"
+            style={{ padding: '10px 22px', fontSize: '14px', borderRadius: '8px' }}
+          >
+            <span>Enter Dashboard</span>
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Home Content Container */}
+      <div style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: '48px', flex: 1 }}>
       {/* Hero Section */}
       <section style={{
         position: 'relative',
@@ -175,7 +252,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       </section>
 
       {/* How It Works Section */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <section id="how-it-works" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 8px 0' }}>
             How ReconX Works
@@ -302,7 +379,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       </section>
 
       {/* Discrepancy Rules Grid */}
-      <section className="card" style={{ padding: '32px' }}>
+      <section id="rules" className="card" style={{ padding: '32px' }}>
         <div style={{ marginBottom: '24px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 6px 0' }}>
             11 Deterministic Discrepancy Categories Detected
@@ -399,6 +476,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
         >
           Launch Dashboard Now
         </button>
+      </div>
       </div>
     </div>
   );

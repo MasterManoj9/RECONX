@@ -92,6 +92,17 @@ export default function App() {
   const findings = reconResult?.discrepancies || [];
   const pendingCount = findings.filter((f) => f.review_status === 'Needs Review').length;
 
+  // 1. Full-screen Home View (No Sidebar, No App Header)
+  if (currentTab === 'home') {
+    return (
+      <Home 
+        onEnterDashboard={() => setCurrentTab('overview')}
+        onStartRecon={() => setCurrentTab('reconciliation')}
+      />
+    );
+  }
+
+  // 2. Clinical Intelligence Dashboard & Workspace View (With Sidebar, Header, and Detail Drawers)
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -110,14 +121,30 @@ export default function App() {
         {/* Top Header */}
         <header className="top-header">
           <div className="header-left">
-            <img 
-              src={logoImg} 
-              alt="Logo" 
-              style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} 
-            />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--navy-900)' }}>
-              ReconX Studio
-            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentTab('home')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '6px',
+              }}
+              title="Return to Home Screen"
+            >
+              <img 
+                src={logoImg} 
+                alt="Logo" 
+                style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} 
+              />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--navy-900)' }}>
+                ReconX Studio
+              </span>
+            </button>
             <span style={{ color: 'var(--slate-300)' }}>•</span>
             <span style={{ fontSize: '12px', color: 'var(--slate-400)' }}>
               Protocol: RCX-101 (Phase II Oncology Synthetic Trial)
@@ -125,6 +152,18 @@ export default function App() {
           </div>
 
           <div className="header-right">
+            {/* Return to Home link */}
+            <button
+              type="button"
+              onClick={() => setCurrentTab('home')}
+              className="btn btn-secondary"
+              style={{ padding: '4px 10px', fontSize: '12px' }}
+            >
+              Back to Home
+            </button>
+
+            <span style={{ color: 'var(--slate-300)' }}>|</span>
+
             {/* Backend Service Indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
               <span
@@ -142,10 +181,10 @@ export default function App() {
               />
               <span style={{ color: 'var(--navy-700)', fontWeight: 500 }}>
                 {backendStatus === 'healthy'
-                  ? 'FastAPI Connected'
+                  ? 'Supabase Cloud Connected'
                   : backendStatus === 'checking'
-                  ? 'Checking API...'
-                  : 'API Unreachable'}
+                  ? 'Connecting...'
+                  : 'Offline Mode'}
               </span>
             </div>
 
@@ -161,13 +200,6 @@ export default function App() {
 
         {/* Tab Body */}
         <main className="page-body">
-          {currentTab === 'home' && (
-            <Home 
-              onEnterDashboard={() => setCurrentTab('overview')}
-              onStartRecon={() => setCurrentTab('reconciliation')}
-            />
-          )}
-
           {currentTab === 'overview' && (
             <Dashboard
               reconResult={reconResult}
