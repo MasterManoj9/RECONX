@@ -2,13 +2,22 @@
 
 > "Detect the mismatch. Explain the risk. Resolve with confidence."
 
+🌐 **Live Deployed Application**: [https://main.d2f4yaeel8u9pw.amplifyapp.com/](https://main.d2f4yaeel8u9pw.amplifyapp.com/)
+
 ReconX is an enterprise-grade clinical data intelligence application designed for clinical data managers and trial monitors. It provides deterministic, AI-assisted comparison of synthetic electronic Case Report Form (eCRF) records against synthetic Central Laboratory datasets, detects discrepancies, explains factual evidence, and enables human-reviewed adjudication with a tamper-evident audit trail.
+
+---
+
+## 🚀 Live Demo & Deployment
+- **Frontend & App Host**: AWS Amplify ([Live Site](https://main.d2f4yaeel8u9pw.amplifyapp.com/))
+- **Database & Cloud Storage**: Supabase PostgreSQL (`vjshgqdtshyhhnpjfbzv.supabase.co`)
+- **Engine Architecture**: Dual-execution support — runs deterministically in-browser for zero-server deployments (AWS Amplify) as well as natively via Python FastAPI (`backend/`).
 
 ---
 
 ## 🌟 Key Features
 
-1. **Deterministic Clinical Reconciliation Engine (`backend/recon.py`)**:
+1. **Deterministic Clinical Reconciliation Engine (`reconEngine.js` & `backend/recon.py`)**:
    - Compound primary key matching based on `(study_id, participant_id, sample_id)`.
    - Comprehensive rule-based discrepancy categorization:
      - `MISSING_IDENTIFIER`: Required primary identifiers missing in source records.
@@ -24,13 +33,13 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
      - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
    - Preserves source datasets as immutable records (no in-place mutations or silent overwrites).
 
-2. **FastAPI Clinical Backend (`backend/main.py`)**:
-   - Endpoints for health checks, sample data download, file uploads (with 10 MB limit and MIME validation), reconciliation runs, human review actions, audit logging, and formula-safe CSV exports.
-   - Built-in CSV formula injection protection (`_safe_csv_field`).
+2. **Persistent Cloud Database (Supabase PostgreSQL)**:
+   - Dedicated cloud storage for all reconciliation sessions (`reconciliations` table).
+   - Real-time immutable audit trail (`audit_trail` table) tracking timestamps, finding IDs, reviewer handles, previous and new review statuses, and mandatory reviewer rationales.
 
-3. **Clinical Explanation Assistant (`backend/assistant.py`)**:
-   - Operates on minimal, de-identified finding evidence.
-   - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and statements of data boundaries.
+3. **Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)**:
+   - Operates strictly on minimal, de-identified finding evidence.
+   - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
    - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
 4. **Clinical Data Intelligence Workspace (`frontend/`)**:
@@ -40,7 +49,7 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
    - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
    - Human review workflow enforcing mandatory reviewer rationales and preventing double-submission.
    - Traceable Audit Trail table displaying previous and new review statuses.
-   - Regulatory-compliant CSV export functionality.
+   - Regulatory-compliant, formula-injection safe CSV export functionality.
 
 ---
 
@@ -48,11 +57,13 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
 
 ```
 reconx/
+├── amplify.yml               # AWS Amplify CI/CD build specification
 ├── backend/
 │   ├── assistant.py          # Clinical explanation assistant & hypothesis engine
+│   ├── db.py                 # Supabase PostgreSQL persistence adapter
 │   ├── main.py               # FastAPI application, CORS, endpoints, audit & export
 │   ├── recon.py              # Core deterministic reconciliation engine & schema validation
-│   ├── requirements.txt      # Python dependencies (FastAPI, Pandas, Pytest, Uvicorn, HTTPX)
+│   ├── requirements.txt      # Python dependencies (FastAPI, Pandas, Supabase, Pytest, Uvicorn, HTTPX)
 │   └── tests/
 │       ├── test_api.py       # API integration, export, review & security tests
 │       ├── test_assistant.py # Assistant explanation, safety & constraint tests
@@ -78,7 +89,9 @@ reconx/
 │   │   │   ├── Reports.jsx       # Export and run summary
 │   │   │   └── ReviewQueue.jsx   # Human review queue
 │   │   ├── services/
-│   │   │   └── api.js            # Unified backend API client
+│   │   │   ├── api.js            # Unified API & Supabase database client
+│   │   │   ├── assistantEngine.js# Client-side explanation & hypothesis synthesizer
+│   │   │   └── reconEngine.js    # Client-side deterministic reconciliation engine
 │   │   ├── App.jsx               # Application root layout & status monitor
 │   │   └── index.css             # Design tokens & styling
 │   ├── package.json
@@ -91,28 +104,10 @@ reconx/
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
+### 1. Web Application (Live)
+Simply visit: **[https://main.d2f4yaeel8u9pw.amplifyapp.com/](https://main.d2f4yaeel8u9pw.amplifyapp.com/)**
 
-### 1. Backend Setup & Launch
-```powershell
-# Navigate to workspace
-cd f:\reconx
-
-# Activate virtual environment
-.\.venv\Scripts\Activate.ps1
-
-# Install dependencies (if needed)
-pip install -r backend/requirements.txt
-
-# Run the FastAPI server
-python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-```
-- API Health Check: `http://127.0.0.1:8000/health`
-- Interactive API Docs (Swagger): `http://127.0.0.1:8000/docs`
-
-### 2. Frontend Setup & Launch
+### 2. Local Frontend Setup
 ```powershell
 cd f:\reconx\frontend
 
@@ -123,6 +118,22 @@ npm install
 npm run dev
 ```
 Open **`http://localhost:5173`** in your browser.
+
+### 3. Local Python Backend Setup (Optional)
+```powershell
+cd f:\reconx
+
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r backend/requirements.txt
+
+# Run the FastAPI server
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+- API Health Check: `http://127.0.0.1:8000/health`
+- Interactive API Docs (Swagger): `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -147,4 +158,5 @@ npm run build
 - **Synthetic Data Exclusively**: Only fictional clinical trial records are processed.
 - **Data Integrity**: Source records are treated as strictly immutable and are never overwritten or altered.
 - **Human-in-the-Loop Requirement**: Discrepancies are never auto-resolved by AI or algorithms; explicit human reviewer adjudication and rationale are mandatory.
+- **Auditability**: Every review decision and reconciliation run is recorded permanently in Supabase PostgreSQL with ISO 8601 timestamps and reviewer IDs.
 - **Formula-Injection Safe**: All exported CSV text fields are sanitized against spreadsheet formula injection triggers (`=`, `+`, `-`, `@`).
