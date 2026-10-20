@@ -26,6 +26,7 @@ from backend.recon import (
     validate_dataframe,
 )
 from backend.assistant import FindingEvidencePayload, generate_explanation
+from backend.db import UnifiedStore
 
 APP_VERSION = "1.0.0"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB limit
@@ -50,28 +51,9 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# In-Memory Storage Layer
-# (Explicitly ephemeral: resets whenever backend restarts)
+# Storage Layer: Supabase PostgreSQL with local memory fallback
 # ---------------------------------------------------------------------------
-class InMemoryStore:
-    def __init__(self):
-        self.reconciliations: Dict[str, Dict[str, Any]] = {}
-        self.audit_log: List[Dict[str, Any]] = []
-
-    def save_reconciliation(self, recon_id: str, data: Dict[str, Any]) -> None:
-        self.reconciliations[recon_id] = data
-
-    def get_reconciliation(self, recon_id: str) -> Optional[Dict[str, Any]]:
-        return self.reconciliations.get(recon_id)
-
-    def add_audit_event(self, event: Dict[str, Any]) -> None:
-        self.audit_log.append(event)
-
-    def get_audit_events(self) -> List[Dict[str, Any]]:
-        return list(self.audit_log)
-
-
-store = InMemoryStore()
+store = UnifiedStore()
 
 
 # ---------------------------------------------------------------------------
@@ -386,11 +368,12 @@ async def explain_finding(payload: FindingEvidencePayload):
 
 @app.get("/api/audit", tags=["Review & Audit"])
 async def get_audit_trail():
-    """Retrieve audit events from ephemeral in-memory storage."""
+    """Retrieve audit events from storage."""
     events = store.get_audit_events()
+    mode = "Supabase PostgreSQL (persistent)" if getattr(store, "is_supabase_enabled", False) else "in-memory (local)"
     return {
         "total_events": len(events),
-        "storage_mode": "in-memory (resets on server restart)",
+        "storage_mode": mode,
         "events": events,
     }
 
