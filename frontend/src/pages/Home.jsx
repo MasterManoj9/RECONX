@@ -9,7 +9,7 @@ import {
 import logoImg from '../assets/logo.png';
 import BinaryOrbits from '../components/BinaryOrbits';
 
-export default function Home({ onEnterDashboard, onStartRecon }) {
+export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOpenAuth, onSignOut }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Binary Orbits Background Canvas */}
@@ -125,15 +125,57 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             Discrepancy Rules
           </a>
 
-          <button
-            type="button"
-            onClick={onEnterDashboard}
-            className="btn btn-primary"
-            style={{ padding: '10px 22px', fontSize: '14px', borderRadius: '8px' }}
-          >
-            <span>Enter Dashboard</span>
-            <ArrowRight size={16} />
-          </button>
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                fontSize: '13px',
+                color: '#cbd5e1',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+              }}>
+                {currentUser.displayName || currentUser.email}
+              </div>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="btn btn-secondary"
+                style={{ padding: '8px 14px', fontSize: '13px' }}
+              >
+                Sign Out
+              </button>
+              <button
+                type="button"
+                onClick={onEnterDashboard}
+                className="btn btn-primary"
+                style={{ padding: '10px 22px', fontSize: '14px', borderRadius: '8px' }}
+              >
+                <span>Dashboard</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="btn btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={onEnterDashboard}
+                className="btn btn-primary"
+                style={{ padding: '10px 22px', fontSize: '14px', borderRadius: '8px' }}
+              >
+                <span>Enter Dashboard</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -276,7 +318,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.9)',
               letterSpacing: '0.02em',
             }}>
-              Enterprise Clinical Data Reconciliation • Supabase Cloud Verified
+              Enterprise Clinical Data Reconciliation Platform
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle2, AlertTriangle, Play, Sparkles } from 'lucide-react';
 import { downloadSampleCsv, postReconcileFiles } from '../services/api';
 
-export default function UploadPanel({ onReconciliationComplete }) {
+export default function UploadPanel({ onReconciliationComplete, userId }) {
   const [ecrfFile, setEcrfFile] = useState(null);
   const [labFile, setLabFile] = useState(null);
   const [ecrfPreview, setEcrfPreview] = useState([]);
@@ -86,7 +86,7 @@ export default function UploadPanel({ onReconciliationComplete }) {
     try {
       setLoading(true);
       setErrorMsg(null);
-      const result = await postReconcileFiles(ecrfFile, labFile);
+      const result = await postReconcileFiles(ecrfFile, labFile, 0.001, userId);
       onReconciliationComplete(result);
     } catch (err) {
       setErrorMsg(err.message || 'Reconciliation failed.');

@@ -1,6 +1,6 @@
 import UploadPanel from '../components/UploadPanel';
 
-export default function Reconciliation({ onReconciliationComplete }) {
+export default function Reconciliation({ onReconciliationComplete, userId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div>
@@ -12,7 +12,7 @@ export default function Reconciliation({ onReconciliationComplete }) {
         </div>
       </div>
 
-      <UploadPanel onReconciliationComplete={onReconciliationComplete} />
+      <UploadPanel onReconciliationComplete={onReconciliationComplete} userId={userId} />
     </div>
   );
 }

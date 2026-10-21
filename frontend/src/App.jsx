@@ -8,43 +8,72 @@ import ReviewQueue from './pages/ReviewQueue';
 import AuditTrail from './pages/AuditTrail';
 import Reports from './pages/Reports';
 import FindingDetail from './components/FindingDetail';
-import { fetchHealth, submitFindingReview } from './services/api';
-import { UserCheck } from 'lucide-react';
+import AuthModal from './components/AuthModal';
+import { 
+  fetchHealth, 
+  submitFindingReview, 
+  getStoredSession, 
+  signOutUser, 
+  fetchUserLatestReconciliation 
+} from './services/api';
+import { LogOut } from 'lucide-react';
 import logoImg from './assets/logo.png';
 import './index.css';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('home');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [reconResult, setReconResult] = useState(null);
   const [selectedFinding, setSelectedFinding] = useState(null);
-  const [backendStatus, setBackendStatus] = useState('checking'); // 'healthy' | 'unreachable' | 'checking'
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Initial Health Check
+  // Check stored session on mount
   useEffect(() => {
-    let isMounted = true;
-    fetchHealth()
-      .then(() => {
-        if (isMounted) setBackendStatus('healthy');
-      })
-      .catch(() => {
-        if (isMounted) setBackendStatus('unreachable');
-      });
-
-    const interval = setInterval(() => {
-      fetchHealth()
-        .then(() => {
-          if (isMounted) setBackendStatus('healthy');
-        })
-        .catch(() => {
-          if (isMounted) setBackendStatus('unreachable');
+    getStoredSession().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        fetchUserLatestReconciliation(user.id).then((recon) => {
+          if (recon) setReconResult(recon);
         });
-    }, 15000);
+      }
+    });
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    // Health ping
+    fetchHealth().catch(() => {});
   }, []);
+
+  const handleAuthSuccess = async (user) => {
+    setCurrentUser(user);
+    // User isolation: fetch only this user's reconciliation run
+    const userRecon = await fetchUserLatestReconciliation(user.id);
+    setReconResult(userRecon || null);
+    setCurrentTab('overview');
+  };
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    setCurrentUser(null);
+    setReconResult(null);
+    setSelectedFinding(null);
+    setCurrentTab('home');
+  };
+
+  const handleEnterDashboard = () => {
+    if (currentUser) {
+      setCurrentTab('overview');
+    } else {
+      setIsAuthOpen(true);
+    }
+  };
+
+  const handleStartRecon = () => {
+    if (currentUser) {
+      setCurrentTab('reconciliation');
+    } else {
+      setIsAuthOpen(true);
+    }
+  };
 
   const handleReconciliationComplete = (result) => {
     setReconResult(result);
@@ -52,8 +81,10 @@ export default function App() {
   };
 
   const handleReviewSubmitted = async (reviewData) => {
+    const reviewerName = currentUser?.displayName || currentUser?.email || 'Clinical Data Reviewer';
     await submitFindingReview({
       ...reviewData,
+      reviewerId: reviewerName,
       reconciliationId: reconResult?.reconciliation_id,
     });
 
@@ -64,7 +95,7 @@ export default function App() {
           return {
             ...f,
             review_status: reviewData.decision,
-            reviewed_by: reviewData.reviewerId,
+            reviewed_by: reviewerName,
             reviewer_rationale: reviewData.rationale,
             reviewed_at: new Date().toISOString(),
           };
@@ -81,7 +112,7 @@ export default function App() {
         setSelectedFinding({
           ...selectedFinding,
           review_status: reviewData.decision,
-          reviewed_by: reviewData.reviewerId,
+          reviewed_by: reviewerName,
           reviewer_rationale: reviewData.rationale,
           reviewed_at: new Date().toISOString(),
         });
@@ -92,17 +123,27 @@ export default function App() {
   const findings = reconResult?.discrepancies || [];
   const pendingCount = findings.filter((f) => f.review_status === 'Needs Review').length;
 
-  // 1. Full-screen Home View (No Sidebar, No App Header)
+  // 1. Full-screen Home View
   if (currentTab === 'home') {
     return (
-      <Home 
-        onEnterDashboard={() => setCurrentTab('overview')}
-        onStartRecon={() => setCurrentTab('reconciliation')}
-      />
+      <>
+        <Home 
+          onEnterDashboard={handleEnterDashboard}
+          onStartRecon={handleStartRecon}
+          currentUser={currentUser}
+          onOpenAuth={() => setIsAuthOpen(true)}
+          onSignOut={handleSignOut}
+        />
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      </>
     );
   }
 
-  // 2. Clinical Intelligence Dashboard & Workspace View (With Sidebar, Header, and Detail Drawers)
+  // 2. Clinical Intelligence Dashboard & Workspace View
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -114,6 +155,8 @@ export default function App() {
         }}
         findingsCount={findings.length}
         pendingReviewCount={pendingCount}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       {/* Main Content Area */}
@@ -123,7 +166,7 @@ export default function App() {
           <div className="header-left">
             <button
               type="button"
-              onClick={() => setCurrentTab('home')}
+              onClick={() => setCurrentTab('overview')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -134,7 +177,7 @@ export default function App() {
                 padding: '4px 8px',
                 borderRadius: '6px',
               }}
-              title="Return to Home Screen"
+              title="Overview Dashboard"
             >
               <img 
                 src={logoImg} 
@@ -152,49 +195,53 @@ export default function App() {
           </div>
 
           <div className="header-right">
-            {/* Return to Home link */}
+            {/* Authenticated User Profile */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(20, 184, 166, 0.15)',
+                color: 'var(--teal-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '13px',
+                border: '1px solid rgba(20, 184, 166, 0.3)',
+              }}>
+                {(currentUser?.displayName || currentUser?.email || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontWeight: 600, color: 'var(--navy-900)', fontSize: '13px', lineHeight: 1.2 }}>
+                  {currentUser?.displayName || currentUser?.email || 'Clinical Reviewer'}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--slate-400)', lineHeight: 1.2 }}>
+                  {currentUser?.email || 'Authenticated Reviewer'}
+                </span>
+              </div>
+            </div>
+
+            <span style={{ color: 'var(--slate-300)' }}>|</span>
+
+            {/* Logout Action */}
             <button
               type="button"
-              onClick={() => setCurrentTab('home')}
+              onClick={handleSignOut}
               className="btn btn-secondary"
-              style={{ padding: '4px 10px', fontSize: '12px' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '12px',
+                borderRadius: '6px',
+              }}
+              title="Sign Out of Session"
             >
-              Back to Home
+              <LogOut size={14} />
+              <span>Log Out</span>
             </button>
-
-            <span style={{ color: 'var(--slate-300)' }}>|</span>
-
-            {/* Backend Service Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-              <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor:
-                    backendStatus === 'healthy'
-                      ? '#10b981'
-                      : backendStatus === 'checking'
-                      ? '#f59e0b'
-                      : '#f43f5e',
-                }}
-              />
-              <span style={{ color: 'var(--navy-700)', fontWeight: 500 }}>
-                {backendStatus === 'healthy'
-                  ? 'Supabase Cloud Connected'
-                  : backendStatus === 'checking'
-                  ? 'Connecting...'
-                  : 'Offline Mode'}
-              </span>
-            </div>
-
-            <span style={{ color: 'var(--slate-300)' }}>|</span>
-
-            {/* User Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--navy-800)' }}>
-              <UserCheck size={15} color="var(--teal-600)" />
-              <span>Dr. E. Adams (Data Reviewer)</span>
-            </div>
           </div>
         </header>
 
@@ -209,7 +256,10 @@ export default function App() {
           )}
 
           {currentTab === 'reconciliation' && (
-            <Reconciliation onReconciliationComplete={handleReconciliationComplete} />
+            <Reconciliation 
+              onReconciliationComplete={handleReconciliationComplete}
+              userId={currentUser?.id}
+            />
           )}
 
           {currentTab === 'findings' && (
@@ -242,6 +292,13 @@ export default function App() {
           onReviewSubmitted={handleReviewSubmitted}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

@@ -14,6 +14,78 @@ const SUPABASE_ANON_KEY =
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Auth helper services
+export async function signUpUser(email, password, fullName) {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName || email.split('@')[0],
+        },
+      },
+    });
+    if (error) throw error;
+    const user = data.user || {
+      id: `usr_${Math.random().toString(36).slice(2, 10)}`,
+      email,
+      displayName: fullName || email.split('@')[0],
+    };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.user_metadata?.full_name || fullName || email.split('@')[0],
+    };
+  } catch (err) {
+    if (err.message && err.message.toLowerCase().includes('confirm')) {
+      return {
+        id: `usr_${Math.random().toString(36).slice(2, 10)}`,
+        email,
+        displayName: fullName || email.split('@')[0],
+      };
+    }
+    throw err;
+  }
+}
+
+export async function signInUser(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+  return {
+    id: data.user.id,
+    email: data.user.email,
+    displayName: data.user.user_metadata?.full_name || email.split('@')[0],
+  };
+}
+
+export async function signOutUser() {
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.warn('Sign out warning:', e);
+  }
+}
+
+export async function getStoredSession() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user) {
+      return {
+        id: data.session.user.id,
+        email: data.session.user.email,
+        displayName: data.session.user.user_metadata?.full_name || data.session.user.email.split('@')[0],
+      };
+    }
+  } catch (e) {
+    console.warn('Session retrieval warning:', e);
+  }
+  return null;
+}
+
 // In-memory cache for fast responsive UI
 const clientStore = {
   reconciliations: new Map(),
@@ -111,7 +183,7 @@ function readFileText(file) {
   });
 }
 
-export async function postReconcileFiles(ecrfFile, labFile, numericTolerance = 0.001) {
+export async function postReconcileFiles(ecrfFile, labFile, numericTolerance = 0.001, userId = null) {
   const ecrfText = await readFileText(ecrfFile);
   const labText = await readFileText(labFile);
 
@@ -127,26 +199,30 @@ export async function postReconcileFiles(ecrfFile, labFile, numericTolerance = 0
     ecrf_filename: ecrfFile.name,
     lab_filename: labFile.name,
   };
+  result.user_id = userId;
 
   // Cache locally
   clientStore.reconciliations.set(result.reconciliation_id, result);
 
   // Persist directly to Supabase
   try {
-    await supabase.from('reconciliations').upsert({
+    const payload = {
       reconciliation_id: result.reconciliation_id,
       summary: result.summary,
       discrepancies: result.discrepancies,
       source_files: result.source_files,
       source_row_counts: result.source_row_counts,
       reconciliation_metadata: result.reconciliation_metadata,
-    });
+    };
+    if (userId) payload.user_id = userId;
+
+    await supabase.from('reconciliations').upsert(payload);
 
     const initEvent = {
       event_id: `EVT-${Math.random().toString(16).slice(2, 10).toUpperCase()}`,
       timestamp: new Date().toISOString(),
       action: 'RECONCILIATION_RUN',
-      reviewer_id: 'SYSTEM',
+      reviewer_id: userId ? String(userId) : 'SYSTEM',
       reconciliation_id: result.reconciliation_id,
       details: {
         total_discrepancies: result.summary.total_discrepancies,
@@ -160,6 +236,41 @@ export async function postReconcileFiles(ecrfFile, labFile, numericTolerance = 0
   }
 
   return result;
+}
+
+export async function fetchUserLatestReconciliation(userId) {
+  if (!userId) return null;
+  // Check local cache
+  for (const recon of clientStore.reconciliations.values()) {
+    if (recon.user_id === userId) return recon;
+  }
+  // Check Supabase
+  try {
+    const { data, error } = await supabase
+      .from('reconciliations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      const row = data[0];
+      const recon = {
+        reconciliation_id: row.reconciliation_id,
+        user_id: row.user_id,
+        summary: row.summary,
+        discrepancies: row.discrepancies,
+        source_files: row.source_files,
+        source_row_counts: row.source_row_counts,
+        reconciliation_metadata: row.reconciliation_metadata,
+      };
+      clientStore.reconciliations.set(recon.reconciliation_id, recon);
+      return recon;
+    }
+  } catch (err) {
+    console.warn('Failed to query user reconciliation from Supabase:', err);
+  }
+  return null;
 }
 
 export async function submitFindingReview({
