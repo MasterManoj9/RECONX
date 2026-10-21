@@ -135,8 +135,9 @@ void main() {
   if (isCad > 0.5) {
     // 3D holographic rotation around Y-axis + mouse parallax
     // Keep staff perfectly STRAIGHT and upright!
-    float sway = sin(uRealTime * 0.8) * 0.025;
-    float rot = sway + uPointer.x * 0.18;
+    // 3D holographic continuous revolution around Y-axis
+    // The staff is at x=0, z=0, so it revolves completely STRAIGHT without any S-bend!
+    float rot = uRealTime * 0.45 * (1.0 + 0.35 * uEnergy);
     float cy = cos(rot);
     float sy = sin(rot);
     vec3 rotated = vec3(
@@ -146,10 +147,14 @@ void main() {
     );
 
     // Dynamic tilt reacting gently to mouse Y
-    float tiltAngle = 0.05 - uPointer.y * 0.1;
+    float tiltAngle = 0.08 - uPointer.y * 0.28;
     float ct = cos(tiltAngle);
     float st = sin(tiltAngle);
-    q = vec3(rotated.x, rotated.y * ct - rotated.z * st, rotated.y * st + rotated.z * ct);
+    vec3 tilted = vec3(rotated.x, rotated.y * ct - rotated.z * st, rotated.y * st + rotated.z * ct);
+    float tiltY = uPointer.x * 0.35;
+    float cty = cos(tiltY);
+    float sty = sin(tiltY);
+    q = vec3(tilted.x * cty + tilted.z * sty, tilted.y, -tilted.x * sty + tilted.z * cty);
 
     // Pulse wave traveling upward along the staff & serpents
     float pulse = 0.5 + 0.5 * sin(p.y * 10.0 - uRealTime * 5.0);
@@ -620,6 +625,7 @@ export default function CaduceusOrbits({
     let animFrameId = 0;
     let lastTime = 0;
     let simTime = 0;
+    let hoverEnergy = 0;
     let viewWidth = 1024;
     let viewHeight = 768;
     let pixelRatio = 1;
@@ -692,6 +698,8 @@ export default function CaduceusOrbits({
       lastTime = timestamp;
       simTime += dt * pRef.current.speed;
 
+      const isOver = pointerState.inside && Math.hypot(pointerState.x, pointerState.y) < 1.4;
+      hoverEnergy += ((isOver ? 1.0 : 0.0) - hoverEnergy) * (1 - Math.exp(-dt / 0.35));
       const p = pRef.current;
       const w = viewWidth * pixelRatio;
       const h = viewHeight * pixelRatio;
@@ -718,6 +726,7 @@ export default function CaduceusOrbits({
       sUniforms.uRealTime.value = simTime;
       sUniforms.uSize.value = p.starSize;
       sUniforms.uPointer.value.set(pointerState.x, pointerState.y);
+      sUniforms.uEnergy.value = hoverEnergy;
       sUniforms.uState.value = stateTargets[stateIndex].texture;
       sUniforms.uActive.value = ripples.some((r) => r.w > 0 && simTime - r.z < 7) ? 1.0 : 0.0;
 
@@ -756,7 +765,7 @@ export default function CaduceusOrbits({
       const bg = parseCssColor(p.backgroundColor, [0.04, 0.04, 0.04]);
       cUniforms.uBackground.value.set(sRgbToLinear(bg[0]), sRgbToLinear(bg[1]), sRgbToLinear(bg[2]));
       cUniforms.uGlow.value = p.glow;
-      cUniforms.uExposure.value = p.intensity;
+      cUniforms.uExposure.value = p.intensity * (1.0 + 0.15 * hoverEnergy);
 
       renderPass(compositeMaterial, null);
 
