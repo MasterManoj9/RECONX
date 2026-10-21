@@ -1,11 +1,9 @@
 import { 
   ArrowRight, 
-  Database, 
   GitCompare, 
   ShieldCheck, 
   Sparkles, 
   Layers, 
-  FileSpreadsheet,
   Activity
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
@@ -295,123 +293,175 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       {/* How It Works Section */}
       <section id="how-it-works" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
             How ReconX Works
           </h2>
-          <p style={{ fontSize: '14px', color: 'var(--slate-400)', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.5, textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>
             Automate clinical trial discrepancy detection in 4 deterministic, regulatory-compliant steps.
           </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
           {/* Step 1 */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            position: 'relative',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--teal-50)',
-              color: 'var(--teal-600)',
-              border: '1px solid #99f6e4',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(20, 184, 166, 0.15)',
+              color: '#2dd4bf',
+              border: '1px solid rgba(20, 184, 166, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 700,
+              boxShadow: '0 0 15px rgba(20, 184, 166, 0.2)',
             }}>
               <Layers size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--teal-600)', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#2dd4bf', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Step 1
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--navy-900)', margin: '4px 0 6px 0' }}>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', margin: '4px 0 6px 0', letterSpacing: '-0.3px' }}>
                 Intake & Verification
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--navy-600)', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
                 Upload eCRF and Central Laboratory CSVs. Files are validated for schema, mandatory columns, size limits, and formatted headers.
               </div>
             </div>
           </div>
 
           {/* Step 2 */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            position: 'relative',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              backgroundColor: '#eff6ff',
-              color: '#2563eb',
-              border: '1px solid #bfdbfe',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)',
             }}>
               <GitCompare size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#2563eb', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Step 2
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--navy-900)', margin: '4px 0 6px 0' }}>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', margin: '4px 0 6px 0', letterSpacing: '-0.3px' }}>
                 Deterministic Matching
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--navy-600)', lineHeight: 1.4 }}>
-                Records are matched via the compound key: <code>study_id + participant_id + sample_id</code> across 11 regulatory discrepancy rules.
+              <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                Records are matched via the compound key: <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>study_id + participant_id + sample_id</code> across 11 regulatory discrepancy rules.
               </div>
             </div>
           </div>
 
           {/* Step 3 */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            position: 'relative',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              backgroundColor: '#f5f3ff',
-              color: '#7c3aed',
-              border: '1px solid #ddd6fe',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              color: '#c084fc',
+              border: '1px solid rgba(168, 85, 247, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 0 15px rgba(168, 85, 247, 0.2)',
             }}>
               <Sparkles size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Step 3
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--navy-900)', margin: '4px 0 6px 0' }}>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', margin: '4px 0 6px 0', letterSpacing: '-0.3px' }}>
                 AI Evidence Explanation
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--navy-600)', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
                 Reviewers receive side-by-side evidence, deterministic rule triggers, factual hypotheses, and actionable next investigation steps.
               </div>
             </div>
           </div>
 
           {/* Step 4 */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            position: 'relative',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              backgroundColor: '#ecfdf5',
-              color: '#059669',
-              border: '1px solid #a7f3d0',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(52, 211, 153, 0.15)',
+              color: '#34d399',
+              border: '1px solid rgba(52, 211, 153, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 0 15px rgba(52, 211, 153, 0.2)',
             }}>
               <ShieldCheck size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Step 4
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--navy-900)', margin: '4px 0 6px 0' }}>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', margin: '4px 0 6px 0', letterSpacing: '-0.3px' }}>
                 Audit & Supabase Sync
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--navy-600)', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
                 Reviewers record rationales under controlled decisions. Every event is saved in immutable Supabase PostgreSQL tables.
               </div>
             </div>
@@ -420,12 +470,20 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       </section>
 
       {/* Discrepancy Rules Grid */}
-      <section id="rules" className="card" style={{ padding: '32px' }}>
+      <section id="rules" style={{
+        padding: '36px',
+        background: 'rgba(255, 255, 255, 0.04)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '24px',
+        boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+      }}>
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 6px 0' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0', letterSpacing: '-0.4px', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
             11 Deterministic Discrepancy Categories Detected
           </h2>
-          <p style={{ fontSize: '13px', color: 'var(--slate-400)' }}>
+          <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
             Every finding is backed by deterministic rules without black-box alterations.
           </p>
         </div>
@@ -447,16 +505,29 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             <div
               key={idx}
               style={{
-                padding: '14px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--slate-50)',
-                border: '1px solid var(--slate-200)',
+                padding: '16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
               }}
             >
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy-900)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{
+                fontSize: '13px',
+                fontWeight: 700,
+                color: '#38bdf8',
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.02em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2dd4bf', boxShadow: '0 0 6px #2dd4bf', flexShrink: 0 }} />
                 {cat.name}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--navy-600)', marginTop: '4px', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '8px', lineHeight: 1.45 }}>
                 {cat.desc}
               </div>
             </div>
@@ -464,58 +535,58 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
         </div>
       </section>
 
-      {/* Cloud & Architecture Callout */}
-      <section style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '20px',
-      }}>
-        <div className="card" style={{ borderLeft: '4px solid var(--teal-500)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--teal-600)', fontWeight: 700 }}>
-            <Database size={18} />
-            <span>Supabase Cloud Database</span>
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--navy-700)', lineHeight: 1.5 }}>
-            All reconciliation runs, findings, and human review decisions persist directly to your Supabase PostgreSQL cluster (<code>vjshgqdtshyhhnpjfbzv.supabase.co</code>). Audit trails survive refreshes and server reboots.
-          </div>
-        </div>
-
-        <div className="card" style={{ borderLeft: '4px solid #2563eb', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2563eb', fontWeight: 700 }}>
-            <FileSpreadsheet size={18} />
-            <span>Formula-Safe Clinical Export</span>
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--navy-700)', lineHeight: 1.5 }}>
-            Download regulatory CSV reports containing source row numbers, reviewer decisions, and rationales, with built-in CSV formula injection protection (sanitizing <code>=, +, -, @</code>).
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
+      {/* Bottom CTA / Launch Dashboard Section */}
       <div style={{
         textAlign: 'center',
-        padding: '36px',
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        border: '1px solid var(--slate-200)',
+        padding: '48px 36px',
+        background: 'rgba(255, 255, 255, 0.04)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.14)',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '16px',
+        gap: '18px',
       }}>
-        <h3 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--navy-900)', margin: 0 }}>
+        <h3 style={{
+          fontSize: '28px',
+          fontWeight: 700,
+          color: '#ffffff',
+          margin: 0,
+          letterSpacing: '-0.5px',
+          textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)',
+        }}>
           Ready to Reconcile Clinical Trial Datasets?
         </h3>
-        <p style={{ fontSize: '14px', color: 'var(--slate-400)', maxWidth: '480px', margin: 0 }}>
+        <p style={{
+          fontSize: '15px',
+          color: '#cbd5e1',
+          maxWidth: '540px',
+          margin: 0,
+          lineHeight: 1.5,
+          textShadow: '0 1px 6px rgba(0, 0, 0, 0.8)',
+        }}>
           Launch the interactive dashboard to inspect synthetic trial data, review discrepancies, or upload custom study datasets.
         </p>
         <button
           type="button"
           onClick={onEnterDashboard}
           className="btn btn-primary"
-          style={{ padding: '12px 32px', fontSize: '15px', borderRadius: '8px' }}
+          style={{
+            padding: '14px 36px',
+            fontSize: '15px',
+            borderRadius: '10px',
+            boxShadow: '0 4px 20px rgba(13, 148, 136, 0.5), 0 0 25px rgba(20, 184, 166, 0.3)',
+            fontWeight: 600,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
         >
-          Launch Dashboard Now
+          <span>Launch Dashboard Now</span>
+          <ArrowRight size={18} />
         </button>
       </div>
       </div>
