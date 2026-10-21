@@ -10,7 +10,7 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
 
 ## 🚀 Live Demo & Deployment
 - **Frontend & App Host**: AWS Amplify ([Live Site](https://main.d2f4yaeel8u9pw.amplifyapp.com/))
-- **Database & Cloud Storage**: Supabase PostgreSQL (`vjshgqdtshyhhnpjfbzv.supabase.co`)
+- **Database & Authentication**: Supabase PostgreSQL & Supabase Auth (`vjshgqdtshyhhnpjfbzv.supabase.co`)
 - **Engine Architecture**: Dual-execution support — runs deterministically in-browser for zero-server deployments (AWS Amplify) as well as natively via Python FastAPI (`backend/`).
 
 ---
@@ -33,24 +33,82 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
      - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
    - Preserves source datasets as immutable records (no in-place mutations or silent overwrites).
 
-2. **Persistent Cloud Database (Supabase PostgreSQL)**:
-   - Dedicated cloud storage for all reconciliation sessions (`reconciliations` table).
-   - Real-time immutable audit trail (`audit_trail` table) tracking timestamps, finding IDs, reviewer handles, previous and new review statuses, and mandatory reviewer rationales.
+2. **Supabase Authentication & Multi-Tenant Dashboard Isolation**:
+   - Integrated email/password signup and signin via Supabase Auth (`supabase.auth`).
+   - **Strict User Isolation**: Every user receives a private, dedicated dashboard with 0 data overlap; reconciliations and reviews are scoped strictly to the authenticated `user_id`.
+   - **ALCOA+ / 21 CFR Part 11 Attribution**: Replaces static placeholder usernames with the authenticated reviewer's genuine profile on every finding decision and audit log.
 
-3. **Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)**:
+3. **Persistent Cloud Database (Supabase PostgreSQL)**:
+   - Dedicated cloud storage for all reconciliation sessions (`reconciliations` table) scoped by `user_id`.
+   - Real-time immutable audit trail (`audit_trail` table) tracking timestamps, finding IDs, reviewer identity, review decisions, and mandatory reviewer rationales.
+
+4. **Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)**:
    - Operates strictly on minimal, de-identified finding evidence.
    - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
    - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
-4. **Clinical Data Intelligence Workspace (`frontend/`)**:
+5. **Clinical Data Intelligence Workspace (`frontend/`)**:
    - Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
-   - **Modern Dedicated Home Page (`Home.jsx`)**: Full-screen landing page with an interactive **Binary Orbits** WebGL galaxy background (`BinaryOrbits.jsx`), explaining how ReconX operates, highlighting the 11 discrepancy categories, and providing immediate entry into the analysis workspace.
-   - Restrained enterprise design system (navy, slate, teal palette with accessible contrast).
-   - Dynamic dashboard featuring KPI metrics, discrepancy breakdown charts, and review queue donut charts.
+   - **iOS Liquid-Glass UI & Binary Orbits Galaxy**: Full-screen landing page with an interactive WebGL2 70,000-star spiral galaxy background (`BinaryOrbits.jsx`) and frosted glass cards (`backdrop-filter: blur(16px)`).
+   - **Collapsible Navigation Rail**: Sidebar smoothly toggles between expanded (`260px`) and icon-only rail (`72px`) modes for wide data table viewing.
+   - **Adjudication Closeout Workflow**: Filter review queues by *Pending*, *Adjudicated*, or *All*, with automatic *Reconciliation Adjudication Complete* regulatory sign-off milestones upon 100% review completion.
    - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
-   - Human review workflow enforcing mandatory reviewer rationales and preventing double-submission.
-   - Traceable Audit Trail table displaying previous and new review statuses.
    - Regulatory-compliant, formula-injection safe CSV export functionality.
+
+---
+
+## 🗄️ Supabase SQL Database Migration
+
+To enable per-user dashboard isolation and Row Level Security in your Supabase project, execute the following script in your **Supabase SQL Editor**:
+
+```sql
+-- 1. Ensure user_id column exists on reconciliations table
+ALTER TABLE reconciliations 
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 2. Ensure user_id column exists on audit_trail table
+ALTER TABLE audit_trail 
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 3. Create performance indexes for user queries
+CREATE INDEX IF NOT EXISTS idx_reconciliations_user_id ON reconciliations(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail(user_id);
+
+-- 4. Enable Row Level Security (RLS) for tenant isolation
+ALTER TABLE reconciliations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_trail ENABLE ROW LEVEL SECURITY;
+
+-- 5. Policies: Allow reviewers to manage their own reconciliations
+DROP POLICY IF EXISTS "Users can read own reconciliations" ON reconciliations;
+CREATE POLICY "Users can read own reconciliations" 
+ON reconciliations FOR SELECT 
+TO authenticated 
+USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can insert own reconciliations" ON reconciliations;
+CREATE POLICY "Users can insert own reconciliations" 
+ON reconciliations FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can update own reconciliations" ON reconciliations;
+CREATE POLICY "Users can update own reconciliations" 
+ON reconciliations FOR UPDATE 
+TO authenticated 
+USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can read audit trail" ON audit_trail;
+CREATE POLICY "Users can read audit trail" 
+ON audit_trail FOR SELECT 
+TO authenticated 
+USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can insert audit trail" ON audit_trail;
+CREATE POLICY "Users can insert audit trail" 
+ON audit_trail FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+```
 
 ---
 
@@ -77,10 +135,11 @@ reconx/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── AuthModal.jsx     # iOS glassmorphic Sign-in / Sign-up dialog
 │   │   │   ├── BinaryOrbits.jsx  # Interactive WebGL2 tilted spiral galaxy background
 │   │   │   ├── FindingDetail.jsx # Slide-in drawer with evidence comparison & AI assistant
 │   │   │   ├── FindingsTable.jsx # Searchable & filterable findings table
-│   │   │   ├── Sidebar.jsx       # Responsive navigation sidebar
+│   │   │   ├── Sidebar.jsx       # Collapsible navigation sidebar (72px / 260px)
 │   │   │   ├── StatCard.jsx      # Summary KPI card
 │   │   │   └── UploadPanel.jsx   # Dual file dropzone with preview & sample loader
 │   │   ├── pages/
@@ -90,13 +149,13 @@ reconx/
 │   │   │   ├── Home.jsx          # Dedicated landing page explaining platform capabilities
 │   │   │   ├── Reconciliation.jsx# Reconciliation run setup
 │   │   │   ├── Reports.jsx       # Export and run summary
-│   │   │   └── ReviewQueue.jsx   # Human review queue
+│   │   │   └── ReviewQueue.jsx   # Human review queue with adjudication closeout
 │   │   ├── services/
-│   │   │   ├── api.js            # Unified API & Supabase database client
+│   │   │   ├── api.js            # Unified API, Auth & Supabase database client
 │   │   │   ├── assistantEngine.js# Client-side explanation & hypothesis synthesizer
 │   │   │   └── reconEngine.js    # Client-side deterministic reconciliation engine
-│   │   ├── App.jsx               # Application root layout & status monitor
-│   │   └── index.css             # Design tokens & styling
+│   │   ├── App.jsx               # Application root layout, auth & status monitor
+│   │   └── index.css             # Design tokens & dynamic iOS glass styles
 │   ├── package.json
 │   └── vite.config.js
 ├── README.md
@@ -161,5 +220,5 @@ npm run build
 - **Synthetic Data Exclusively**: Only fictional clinical trial records are processed.
 - **Data Integrity**: Source records are treated as strictly immutable and are never overwritten or altered.
 - **Human-in-the-Loop Requirement**: Discrepancies are never auto-resolved by AI or algorithms; explicit human reviewer adjudication and rationale are mandatory.
-- **Auditability**: Every review decision and reconciliation run is recorded permanently in Supabase PostgreSQL with ISO 8601 timestamps and reviewer IDs.
+- **Attributable Auditability**: Under ALCOA+ principles, every review decision and reconciliation run is recorded permanently in Supabase PostgreSQL with ISO 8601 timestamps and reviewer IDs.
 - **Formula-Injection Safe**: All exported CSV text fields are sanitized against spreadsheet formula injection triggers (`=`, `+`, `-`, `@`).
