@@ -252,15 +252,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             background: 'transparent',
             padding: '12px',
           }}>
-            <div style={{
-              position: 'relative',
-              padding: '14px',
-              borderRadius: '24px',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(123, 77, 255, 0.25)',
-              backdropFilter: 'blur(10px)',
-            }}>
+            <div className="glass-logo-frame">
               <img
                 src={logoImg}
                 alt="ReconX Official Logo"
@@ -303,33 +295,14 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
           {/* Step 1 */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
-          }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+          <div className="glass-step-card">
+            <div className="glass-step-icon glass-step-icon-teal" style={{
               backgroundColor: 'rgba(20, 184, 166, 0.15)',
               color: '#2dd4bf',
               border: '1px solid rgba(20, 184, 166, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
               boxShadow: '0 0 15px rgba(20, 184, 166, 0.2)',
             }}>
-              <Layers size={20} />
+              <Layers size={22} />
             </div>
             <div>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#2dd4bf', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -345,32 +318,14 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
           </div>
 
           {/* Step 2 */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
-          }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+          <div className="glass-step-card">
+            <div className="glass-step-icon glass-step-icon-blue" style={{
               backgroundColor: 'rgba(56, 189, 248, 0.15)',
               color: '#38bdf8',
               border: '1px solid rgba(56, 189, 248, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)',
             }}>
-              <GitCompare size={20} />
+              <GitCompare size={22} />
             </div>
             <div>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -386,32 +341,14 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
           </div>
 
           {/* Step 3 */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
-          }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+          <div className="glass-step-card">
+            <div className="glass-step-icon glass-step-icon-purple" style={{
               backgroundColor: 'rgba(168, 85, 247, 0.15)',
               color: '#c084fc',
               border: '1px solid rgba(168, 85, 247, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               boxShadow: '0 0 15px rgba(168, 85, 247, 0.2)',
             }}>
-              <Sparkles size={20} />
+              <Sparkles size={22} />
             </div>
             <div>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -427,32 +364,14 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
           </div>
 
           {/* Step 4 */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
-          }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+          <div className="glass-step-card">
+            <div className="glass-step-icon glass-step-icon-emerald" style={{
               backgroundColor: 'rgba(52, 211, 153, 0.15)',
               color: '#34d399',
               border: '1px solid rgba(52, 211, 153, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               boxShadow: '0 0 15px rgba(52, 211, 153, 0.2)',
             }}>
-              <ShieldCheck size={20} />
+              <ShieldCheck size={22} />
             </div>
             <div>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -502,18 +421,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             { name: 'UNIT_MISMATCH', desc: 'Incompatible units of measure (e.g. g/dL vs mg/dL).' },
             { name: 'VALUE_MISMATCH', desc: 'Quantitative measurement discrepancy exceeding tolerance.' },
           ].map((cat, idx) => (
-            <div
-              key={idx}
-              style={{
-                padding: '16px',
-                borderRadius: '14px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
-              }}
-            >
+            <div key={idx} className="glass-rule-item">
               <div style={{
                 fontSize: '13px',
                 fontWeight: 700,
@@ -524,7 +432,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2dd4bf', boxShadow: '0 0 6px #2dd4bf', flexShrink: 0 }} />
+                <span className="glass-rule-dot" />
                 {cat.name}
               </div>
               <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '8px', lineHeight: 1.45 }}>
@@ -536,20 +444,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       </section>
 
       {/* Bottom CTA / Launch Dashboard Section */}
-      <div style={{
-        textAlign: 'center',
-        padding: '48px 36px',
-        background: 'rgba(255, 255, 255, 0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '24px',
-        border: '1px solid rgba(255, 255, 255, 0.14)',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '18px',
-      }}>
+      <div className="glass-cta-card">
         <h3 style={{
           fontSize: '28px',
           fontWeight: 700,
