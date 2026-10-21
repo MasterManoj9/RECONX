@@ -134,17 +134,19 @@ void main() {
 
   if (isCad > 0.5) {
     // 3D holographic rotation around Y-axis + mouse parallax
-    float rot = uRealTime * 0.35 + uPointer.x * 0.45;
+    // Keep staff perfectly STRAIGHT and upright!
+    float sway = sin(uRealTime * 0.8) * 0.025;
+    float rot = sway + uPointer.x * 0.18;
     float cy = cos(rot);
     float sy = sin(rot);
     vec3 rotated = vec3(
       p.x * cy + p.z * sy,
-      p.y + sin(uRealTime * 1.4 + p.x * 2.0) * 0.02,
+      p.y,
       -p.x * sy + p.z * cy
     );
 
     // Dynamic tilt reacting gently to mouse Y
-    float tiltAngle = 0.15 - uPointer.y * 0.2;
+    float tiltAngle = 0.05 - uPointer.y * 0.1;
     float ct = cos(tiltAngle);
     float st = sin(tiltAngle);
     q = vec3(rotated.x, rotated.y * ct - rotated.z * st, rotated.y * st + rotated.z * ct);
@@ -444,16 +446,16 @@ export default function CaduceusOrbits({
       const absX = Math.abs(x);
       const isWing = y > 0.15 * scale && absX > 0.1 * scale;
       const isSphere = y > 0.65 * scale && absX < 0.15 * scale;
-      const isSerpent = !isWing && !isSphere && y > -0.6 * scale && y < 0.45 * scale;
+      const isSerpent = !isWing && !isSphere && absX >= 0.038 * scale && y > -0.65 * scale && y < 0.45 * scale;
 
       if (isSphere) {
         const rSphere = 0.12 * scale;
         const dy = y - 0.76 * scale;
         z = (rand() > 0.5 ? 1 : -1) * Math.sqrt(Math.max(0, rSphere * rSphere - x * x - dy * dy));
       } else if (isWing) {
-        z = Math.sin(absX * 3.5) * 0.14 * (rand() > 0.5 ? 1 : -1) * 0.6;
+        z = Math.sin(absX * 3.5) * 0.06 * (rand() > 0.5 ? 1 : -1);
       } else if (isSerpent) {
-        z = Math.sin(y * 18.0) * 0.12 + randNorm() * 0.02;
+        z = randNorm() * 0.015;
       } else {
         z = randNorm() * 0.025;
       }
