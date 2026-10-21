@@ -144,38 +144,10 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       {/* Hero Section */}
       <section style={{
         position: 'relative',
-        background: 'linear-gradient(135deg, rgba(10, 15, 29, 0.75) 0%, rgba(15, 23, 42, 0.8) 50%, rgba(19, 36, 56, 0.8) 100%)',
-        borderRadius: '16px',
-        padding: '56px 48px',
+        background: 'transparent',
+        padding: '32px 0 16px 0',
         color: '#ffffff',
-        overflow: 'hidden',
-        boxShadow: '0 20px 40px -15px rgba(10, 15, 29, 0.4)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
       }}>
-        {/* Glow Accents */}
-        <div style={{
-          position: 'absolute',
-          top: '-80px',
-          right: '-80px',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(20, 184, 166, 0.25) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-100px',
-          left: '20%',
-          width: '280px',
-          height: '280px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
         <div style={{
           position: 'relative',
           display: 'grid',
@@ -190,13 +162,14 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
               gap: '8px',
               padding: '6px 14px',
               borderRadius: '9999px',
-              backgroundColor: 'rgba(20, 184, 166, 0.12)',
-              border: '1px solid rgba(20, 184, 166, 0.3)',
+              backgroundColor: 'rgba(20, 184, 166, 0.16)',
+              border: '1px solid rgba(20, 184, 166, 0.4)',
               color: 'var(--teal-400)',
               fontSize: '12px',
               fontWeight: 600,
               marginBottom: '20px',
               letterSpacing: '0.04em',
+              backdropFilter: 'blur(8px)',
             }}>
               <Activity size={14} />
               CLINICAL TRIAL DATA INTELLIGENCE
@@ -209,13 +182,17 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
               lineHeight: 1.15,
               color: '#ffffff',
               margin: '0 0 16px 0',
+              textShadow: '0 4px 24px rgba(0, 0, 0, 0.95), 0 2px 8px rgba(0, 0, 0, 0.9)',
             }}>
               Detect the mismatch.<br />
               Explain the risk.<br />
               <span style={{
-                background: 'linear-gradient(90deg, #2dd4bf 0%, #38bdf8 100%)',
+                background: 'linear-gradient(90deg, #2dd4bf 0%, #38bdf8 50%, #f472b6 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                display: 'inline-block',
+                textShadow: 'none',
+                filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.7))',
               }}>
                 Resolve with confidence.
               </span>
@@ -224,9 +201,10 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             <p style={{
               fontSize: '16px',
               lineHeight: 1.6,
-              color: 'var(--slate-300)',
+              color: '#cbd5e1',
               maxWidth: '560px',
               marginBottom: '32px',
+              textShadow: '0 2px 12px rgba(0, 0, 0, 0.95)',
             }}>
               ReconX is the next-generation clinical reconciliation platform that deterministically cross-checks Electronic Case Report Forms (eCRF) against Central Laboratory records. Powered by live Supabase cloud persistence and an AI-assisted explanation assistant.
             </p>
@@ -240,7 +218,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
                   padding: '14px 28px',
                   fontSize: '15px',
                   borderRadius: '10px',
-                  boxShadow: '0 4px 14px rgba(13, 148, 136, 0.4)',
+                  boxShadow: '0 4px 20px rgba(13, 148, 136, 0.5), 0 0 25px rgba(20, 184, 166, 0.3)',
                 }}
               >
                 <span>Enter Dashboard</span>
@@ -256,8 +234,9 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
                   fontSize: '15px',
                   borderRadius: '10px',
                   backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  borderColor: 'rgba(255, 255, 255, 0.18)',
+                  borderColor: 'rgba(255, 255, 255, 0.22)',
                   color: '#ffffff',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <GitCompare size={18} color="var(--teal-400)" />
@@ -272,31 +251,40 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '20px',
-            padding: '36px',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            background: 'transparent',
+            padding: '12px',
           }}>
-            <img
-              src={logoImg}
-              alt="ReconX Official Logo"
-              style={{
-                width: '100%',
-                maxWidth: '260px',
-                borderRadius: '16px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
-                objectFit: 'contain',
-                backgroundColor: '#ffffff',
-                padding: '8px',
-              }}
-            />
+            <div style={{
+              position: 'relative',
+              padding: '14px',
+              borderRadius: '24px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(123, 77, 255, 0.25)',
+              backdropFilter: 'blur(10px)',
+            }}>
+              <img
+                src={logoImg}
+                alt="ReconX Official Logo"
+                style={{
+                  width: '100%',
+                  maxWidth: '260px',
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+                  objectFit: 'contain',
+                  backgroundColor: '#ffffff',
+                  padding: '12px',
+                  display: 'block',
+                }}
+              />
+            </div>
             <div style={{
               marginTop: '16px',
               textAlign: 'center',
               fontSize: '12px',
-              color: 'var(--slate-400)',
+              color: '#cbd5e1',
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.9)',
+              letterSpacing: '0.02em',
             }}>
               Enterprise Clinical Data Reconciliation • Supabase Cloud Verified
             </div>
