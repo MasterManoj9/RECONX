@@ -9,10 +9,61 @@ import {
   Activity
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import BinaryOrbits from '../components/BinaryOrbits';
 
 export default function Home({ onEnterDashboard, onStartRecon }) {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0f1d', color: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Binary Orbits Background Canvas */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden'
+        }}
+        aria-hidden="true"
+      >
+        <BinaryOrbits
+          colors={["#7B4DFF", "#FFC2EE"]}
+          backgroundColor={"#0A0A0A"}
+          mode={"auto"}
+          stars={70000}
+          starSize={1.7}
+          sparkle={0.5}
+          arms={3}
+          twist={3.5}
+          armStrength={0.5}
+          dust={0.5}
+          core={1}
+          coreSize={0.07}
+          innerVoid={0}
+          thickness={0.02}
+          tilt={62}
+          roll={-8}
+          scale={1}
+          centerX={0.5}
+          centerY={0.52}
+          speed={1}
+          twinkle={0.35}
+          depth={0.4}
+          glow={0.45}
+          intensity={1}
+          interactive={true}
+          hoverWake={true}
+          clickRipple={true}
+          wakeStrength={1}
+          rippleStrength={1}
+          hoverBoost={0.5}
+          paused={false}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+
       {/* Top Navbar for Home */}
       <header style={{
         height: '72px',
@@ -89,17 +140,19 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       </header>
 
       {/* Main Home Content Container */}
-      <div style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: '48px', flex: 1 }}>
+      <div style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: '48px', flex: 1, position: 'relative', zIndex: 10 }}>
       {/* Hero Section */}
       <section style={{
         position: 'relative',
-        background: 'linear-gradient(135deg, #0a0f1d 0%, #0f172a 50%, #132438 100%)',
+        background: 'linear-gradient(135deg, rgba(10, 15, 29, 0.75) 0%, rgba(15, 23, 42, 0.8) 50%, rgba(19, 36, 56, 0.8) 100%)',
         borderRadius: '16px',
         padding: '56px 48px',
         color: '#ffffff',
         overflow: 'hidden',
         boxShadow: '0 20px 40px -15px rgba(10, 15, 29, 0.4)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
       }}>
         {/* Glow Accents */}
         <div style={{
@@ -254,7 +307,7 @@ export default function Home({ onEnterDashboard, onStartRecon }) {
       {/* How It Works Section */}
       <section id="how-it-works" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--navy-900)', margin: '0 0 8px 0' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0' }}>
             How ReconX Works
           </h2>
           <p style={{ fontSize: '14px', color: 'var(--slate-400)', lineHeight: 1.5 }}>

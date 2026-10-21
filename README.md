@@ -43,8 +43,8 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
    - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
 4. **Clinical Data Intelligence Workspace (`frontend/`)**:
-   - Built with **React 19**, **Vite**, **Lucide Icons**, and **Recharts**.
-   - **Modern Dedicated Home Page (`Home.jsx`)**: Full-screen landing page explaining how ReconX operates, highlighting the 11 discrepancy categories, and providing immediate entry into the analysis workspace.
+   - Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
+   - **Modern Dedicated Home Page (`Home.jsx`)**: Full-screen landing page with an interactive **Binary Orbits** WebGL galaxy background (`BinaryOrbits.jsx`), explaining how ReconX operates, highlighting the 11 discrepancy categories, and providing immediate entry into the analysis workspace.
    - Restrained enterprise design system (navy, slate, teal palette with accessible contrast).
    - Dynamic dashboard featuring KPI metrics, discrepancy breakdown charts, and review queue donut charts.
    - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
@@ -77,6 +77,7 @@ reconx/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── BinaryOrbits.jsx  # Interactive WebGL2 tilted spiral galaxy background
 │   │   │   ├── FindingDetail.jsx # Slide-in drawer with evidence comparison & AI assistant
 │   │   │   ├── FindingsTable.jsx # Searchable & filterable findings table
 │   │   │   ├── Sidebar.jsx       # Responsive navigation sidebar
