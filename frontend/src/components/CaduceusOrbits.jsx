@@ -4,7 +4,6 @@ import basePoints from './caduceus_base_points.json';
 
 const TWO_PI = Math.PI * 2;
 
-// eslint-disable-next-line no-unused-vars
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
@@ -448,7 +447,7 @@ export default function CaduceusOrbits({
       const x = bp[0] * scale + jx;
       const y = bp[1] * scale + jy + 0.04;
 
-      let z;
+      let z = 0;
       const absX = Math.abs(x);
       const isWing = y > 0.15 * scale && absX > 0.1 * scale;
       const isSphere = y > 0.65 * scale && absX < 0.15 * scale;

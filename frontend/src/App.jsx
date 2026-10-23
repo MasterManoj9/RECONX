@@ -9,7 +9,6 @@ import AuditTrail from './pages/AuditTrail';
 import Reports from './pages/Reports';
 import FindingDetail from './components/FindingDetail';
 import AuthModal from './components/AuthModal';
-import AISettingsModal from './components/AISettingsModal';
 import { 
   fetchHealth, 
   submitFindingReview, 
@@ -17,7 +16,7 @@ import {
   signOutUser, 
   fetchUserLatestReconciliation 
 } from './services/api';
-import { LogOut, Sparkles } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import logoImg from './assets/logo.png';
 import './index.css';
 
@@ -25,7 +24,6 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [authMessage, setAuthMessage] = useState(null);
   const [authEmail, setAuthEmail] = useState('');
@@ -291,28 +289,6 @@ export default function App() {
 
             <span style={{ color: 'var(--slate-300)' }}>|</span>
 
-            {/* Gemini AI Settings */}
-            <button
-              type="button"
-              onClick={() => setIsAISettingsOpen(true)}
-              className="btn btn-secondary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                borderRadius: '6px',
-                color: 'var(--teal-600)',
-                backgroundColor: 'var(--teal-50)',
-                border: '1px solid var(--teal-200)',
-              }}
-              title="Configure Google Gemini NLP"
-            >
-              <Sparkles size={14} />
-              <span>Gemini AI</span>
-            </button>
-
             {/* Logout Action */}
             <button
               type="button"
@@ -356,7 +332,6 @@ export default function App() {
               findings={findings}
               onSelectFinding={(f) => setSelectedFinding(f)}
               selectedFindingId={selectedFinding?.finding_id}
-              onOpenAISettings={() => setIsAISettingsOpen(true)}
             />
           )}
 
@@ -380,7 +355,6 @@ export default function App() {
           finding={selectedFinding}
           onClose={() => setSelectedFinding(null)}
           onReviewSubmitted={handleReviewSubmitted}
-          onOpenAISettings={() => setIsAISettingsOpen(true)}
         />
       )}
 
@@ -395,12 +369,6 @@ export default function App() {
         initialMode={authMode}
         initialMessage={authMessage}
         initialEmail={authEmail}
-      />
-
-      {/* Gemini AI Settings Modal */}
-      <AISettingsModal
-        isOpen={isAISettingsOpen}
-        onClose={() => setIsAISettingsOpen(false)}
       />
     </div>
   );
