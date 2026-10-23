@@ -5,13 +5,10 @@ import {
   Send, 
   Bot, 
   User, 
-  Settings, 
-  Key, 
-  Check, 
   MessageSquare,
   HelpCircle
 } from 'lucide-react';
-import { sendChatMessage, getGeminiKey, setGeminiKey } from '../services/chatService';
+import { sendChatMessage } from '../services/chatService';
 
 let messageSeq = 0;
 function getNextId(prefix = 'msg') {
@@ -30,9 +27,6 @@ export default function ReconXAssistant() {
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(getGeminiKey());
-  const [keySaved, setKeySaved] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -90,20 +84,10 @@ export default function ReconXAssistant() {
     }
   };
 
-  const handleSaveApiKey = () => {
-    setGeminiKey(apiKeyInput);
-    setKeySaved(true);
-    setTimeout(() => {
-      setKeySaved(false);
-      setShowSettings(false);
-    }, 1200);
-  };
-
   // Format message text with basic markdown bolding & newlines
   const renderMessageContent = (text) => {
     const lines = text.split('\n');
     return lines.map((line, idx) => {
-      // Bold handling
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
         <div key={idx} style={{ marginBottom: line.trim() === '' ? '6px' : '3px', minHeight: '14px' }}>
@@ -267,107 +251,27 @@ export default function ReconXAssistant() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setShowSettings(!showSettings)}
-                style={{
-                  background: showSettings ? 'rgba(20, 184, 166, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '28px',
-                  height: '28px',
-                  color: showSettings ? '#2dd4bf' : '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
-                }}
-                title="API Key Settings"
-              >
-                <Settings size={15} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '28px',
-                  height: '28px',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
-                }}
-                title="Close Assistant"
-              >
-                <X size={16} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: 'none',
+                borderRadius: '8px',
+                width: '28px',
+                height: '28px',
+                color: '#94a3b8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              title="Close Assistant"
+            >
+              <X size={16} />
+            </button>
           </div>
-
-          {/* Settings Drawer (if toggled) */}
-          {showSettings && (
-            <div style={{
-              padding: '12px 16px',
-              backgroundColor: 'rgba(30, 41, 59, 0.95)',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-              fontSize: '11px',
-              color: '#cbd5e1',
-            }}>
-              <div style={{ fontWeight: 600, color: '#f1f5f9', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Key size={13} color="#2dd4bf" />
-                <span>Google Gemini API Key (Optional)</span>
-              </div>
-              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
-                Add your free key for open-ended AI conversation, or leave empty to use built-in clinical intelligence.
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="password"
-                  placeholder="Paste Gemini API key (AIzaSy...)"
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveApiKey}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: '#0d9488',
-                    color: '#ffffff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {keySaved ? <Check size={12} /> : null}
-                  <span>{keySaved ? 'Saved' : 'Save'}</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Messages Area */}
           <div style={{

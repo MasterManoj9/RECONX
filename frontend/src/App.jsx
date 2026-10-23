@@ -205,7 +205,6 @@ export default function App() {
           initialMessage={authMessage}
           initialEmail={authEmail}
         />
-      <ReconXAssistant />
       </>
     );
   }

@@ -9,7 +9,7 @@ import {
 import logoImg from '../assets/logo.png';
 import CaduceusOrbits from '../components/CaduceusOrbits';
 
-export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOpenAuth, onSignOut }) {
+export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOpenAuth }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Background Orbits Canvas */}
@@ -108,24 +108,6 @@ export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOp
 
           {currentUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                fontSize: '13px',
-                color: '#cbd5e1',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-              }}>
-                {currentUser.displayName || currentUser.email}
-              </div>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="btn btn-secondary"
-                style={{ padding: '8px 14px', fontSize: '13px' }}
-              >
-                Sign Out
-              </button>
               <button
                 type="button"
                 onClick={onEnterDashboard}
@@ -227,7 +209,7 @@ export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOp
               marginBottom: '32px',
               textShadow: '0 2px 12px rgba(0, 0, 0, 0.95)',
             }}>
-              ReconX is the next-generation clinical reconciliation platform that deterministically cross-checks Electronic Case Report Forms (eCRF) against Central Laboratory records. Powered by live Supabase cloud persistence and an AI-assisted explanation assistant.
+              ReconX is the next-generation clinical reconciliation platform that deterministically cross-checks Electronic Case Report Forms (eCRF) against Central Laboratory records with an AI-assisted explanation assistant.
             </p>
 
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
@@ -401,10 +383,10 @@ export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOp
                 Step 4
               </div>
               <div style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', margin: '4px 0 6px 0', letterSpacing: '-0.3px' }}>
-                Audit & Supabase Sync
+                Audit & Compliance Traceability
               </div>
               <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
-                Reviewers record rationales under controlled decisions. Every event is saved in immutable Supabase PostgreSQL tables.
+                Reviewers record rationales under controlled decisions. Every event is saved in tamper-evident, immutable audit tables.
               </div>
             </div>
           </div>
