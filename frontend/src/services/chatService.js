@@ -4,10 +4,15 @@
  */
 
 const STORAGE_KEY = 'RECONX_GEMINI_KEY';
-const MODEL = 'gemini-1.5-flash';
+const PRIMARY_MODEL = 'gemini-flash-lite-latest';
+const FALLBACK_MODEL = 'gemini-flash-latest';
 
 export function getGeminiKey() {
-  return localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_GEMINI_API_KEY || '';
+  return (
+    localStorage.getItem(STORAGE_KEY) ||
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    ''
+  );
 }
 
 export function setGeminiKey(key) {
@@ -42,45 +47,52 @@ export async function sendChatMessage(userMessage, conversationHistory = []) {
   const apiKey = getGeminiKey();
 
   if (apiKey) {
-    try {
-      // Build conversation contents for Gemini
-      const contents = conversationHistory.map((m) => ({
-        role: m.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
-      }));
+    // Try primary model first, then fallback model
+    const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
 
-      // Add current message
-      contents.push({
-        role: 'user',
-        parts: [{ text: userMessage }],
-      });
+    for (const model of modelsToTry) {
+      try {
+        // Build conversation contents for Gemini
+        const contents = conversationHistory
+          .filter((m) => m.id !== 'welcome')
+          .map((m) => ({
+            role: m.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }],
+          }));
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            systemInstruction: {
-              parts: [{ text: SYSTEM_PROMPT }],
-            },
-          }),
+        // Add current message
+        contents.push({
+          role: 'user',
+          parts: [{ text: userMessage }],
+        });
+
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              systemInstruction: {
+                parts: [{ text: SYSTEM_PROMPT }],
+              },
+            }),
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            return {
+              text: text.trim(),
+              source: `gemini (${model})`,
+            };
+          }
         }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          return {
-            text: text.trim(),
-            source: 'gemini',
-          };
-        }
+      } catch (err) {
+        console.warn(`Gemini call error on ${model}:`, err);
       }
-    } catch (err) {
-      console.warn('Gemini chat error, using fallback:', err);
     }
   }
 
@@ -88,7 +100,7 @@ export async function sendChatMessage(userMessage, conversationHistory = []) {
   const fallbackReply = generateSmartFallbackReply(userMessage);
   return {
     text: fallbackReply,
-    source: 'fallback',
+    source: 'built-in clinical engine',
   };
 }
 
