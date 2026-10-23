@@ -4,56 +4,86 @@
 
 🌐 **Live Deployed Application**: [https://main.d2f4yaeel8u9pw.amplifyapp.com/](https://main.d2f4yaeel8u9pw.amplifyapp.com/)
 
-ReconX is an enterprise-grade clinical data intelligence application designed for clinical data managers and trial monitors. It provides deterministic, AI-assisted comparison of synthetic electronic Case Report Form (eCRF) records against synthetic Central Laboratory datasets, detects discrepancies, explains factual evidence, and enables human-reviewed adjudication with a tamper-evident audit trail.
+ReconX is an enterprise-grade clinical data intelligence application designed for clinical data managers, trial monitors, and medical reviewers. It provides deterministic, AI-assisted comparison of synthetic electronic Case Report Form (eCRF) records against synthetic Central Laboratory datasets, detects discrepancies, explains factual evidence, and enables human-reviewed adjudication with a tamper-evident audit trail.
 
 ---
 
 ## 🚀 Live Demo & Deployment
 - **Frontend & App Host**: AWS Amplify ([Live Site](https://main.d2f4yaeel8u9pw.amplifyapp.com/))
 - **Database & Authentication**: Supabase PostgreSQL & Supabase Auth (`vjshgqdtshyhhnpjfbzv.supabase.co`)
+- **Email Delivery Service**: Custom SMTP via Gmail App Password / Custom SMTP provider
 - **Engine Architecture**: Dual-execution support — runs deterministically in-browser for zero-server deployments (AWS Amplify) as well as natively via Python FastAPI (`backend/`).
 
 ---
 
 ## 🌟 Key Features
 
-1. **Deterministic Clinical Reconciliation Engine (`reconEngine.js` & `backend/recon.py`)**:
-   - Compound primary key matching based on `(study_id, participant_id, sample_id)`.
-   - Comprehensive rule-based discrepancy categorization:
-     - `MISSING_IDENTIFIER`: Required primary identifiers missing in source records.
-     - `DUPLICATE_KEY`: Duplicate compound identifiers detected within the same source.
-     - `MISSING_ECRF_RECORD`: Sample present in Central Lab but missing from eCRF.
-     - `MISSING_LAB_RECORD`: Sample recorded in eCRF with no Central Lab accession.
-     - `INVALID_DATE`: Unparseable or malformed collection timestamps.
-     - `DATE_MISMATCH`: Collection dates diverge between eCRF and Lab.
-     - `ANALYTE_MISMATCH`: Analyte naming inconsistencies.
-     - `MISSING_VALUE`: Missing or null result values.
-     - `INVALID_NUMERIC_VALUE`: Non-numeric entries where quantitative values are expected.
-     - `UNIT_MISMATCH`: Divergent units of measure without unverified automated conversions.
-     - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
-   - Preserves source datasets as immutable records (no in-place mutations or silent overwrites).
+### 1. Deterministic Clinical Reconciliation Engine (`reconEngine.js` & `backend/recon.py`)
+- Compound primary key matching based on `(study_id, participant_id, sample_id)`.
+- Comprehensive rule-based discrepancy categorization:
+  - `MISSING_IDENTIFIER`: Required primary identifiers missing in source records.
+  - `DUPLICATE_KEY`: Duplicate compound identifiers detected within the same source.
+  - `MISSING_ECRF_RECORD`: Sample present in Central Lab but missing from eCRF.
+  - `MISSING_LAB_RECORD`: Sample recorded in eCRF with no Central Lab accession.
+  - `INVALID_DATE`: Unparseable or malformed collection timestamps.
+  - `DATE_MISMATCH`: Collection dates diverge between eCRF and Lab.
+  - `ANALYTE_MISMATCH`: Analyte naming inconsistencies.
+  - `MISSING_VALUE`: Missing or null result values.
+  - `INVALID_NUMERIC_VALUE`: Non-numeric entries where quantitative values are expected.
+  - `UNIT_MISMATCH`: Divergent units of measure without unverified automated conversions.
+  - `VALUE_MISMATCH`: Numeric differences exceeding configured tolerance.
+- Preserves source datasets as immutable records (no in-place mutations or silent overwrites).
 
-2. **Supabase Authentication & Multi-Tenant Dashboard Isolation**:
-   - Integrated email/password signup and signin via Supabase Auth (`supabase.auth`).
-   - **Strict User Isolation**: Every user receives a private, dedicated dashboard with 0 data overlap; reconciliations and reviews are scoped strictly to the authenticated `user_id`.
-   - **ALCOA+ / 21 CFR Part 11 Attribution**: Replaces static placeholder usernames with the authenticated reviewer's genuine profile on every finding decision and audit log.
+### 2. Production Authentication & Full Email Verification Lifecycle
+- **Real User Signup Flow**: Reviewers register with their work email, full name, and password.
+- **Verification Prompt**: Upon signup, users are presented with a dedicated "Check Your Email" prompt displaying next steps.
+- **Confirmation Callback & Seamless Redirect**: Clicking the verification link in their email redirects users back to ReconX, where the app automatically opens the Sign In modal with a confirmed badge (`Email confirmed successfully!`).
+- **Strict User Isolation**: Every user receives an isolated, dedicated dashboard with 0 data overlap; reconciliations and reviews are scoped strictly to the authenticated `user_id`.
+- **ALCOA+ / 21 CFR Part 11 Attribution**: Authentic reviewer signatures on every finding decision and audit log.
+- **Zero Demo Shortcuts**: Instant testing demo shortcuts have been completely retired to maintain regulatory integrity.
 
-3. **Persistent Cloud Database (Supabase PostgreSQL)**:
-   - Dedicated cloud storage for all reconciliation sessions (`reconciliations` table) scoped by `user_id`.
-   - Real-time immutable audit trail (`audit_trail` table) tracking timestamps, finding IDs, reviewer identity, review decisions, and mandatory reviewer rationales.
+### 3. Interactive 3D Caduceus Medical Particle Background (`CaduceusOrbits.jsx`)
+- Built with **Three.js** and **WebGL2**.
+- Renders the iconic medical Caduceus (winged staff with twin entwined serpents) using thousands of glowing, colored particles.
+- Features continuous 3D axial revolution with responsive mouse-tracking parallax and interactive click-ripple shockwaves.
 
-4. **Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)**:
-   - Operates strictly on minimal, de-identified finding evidence.
-   - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
-   - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
+### 4. Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)
+- Operates strictly on minimal, de-identified finding evidence.
+- Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
+- Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
-5. **Clinical Data Intelligence Workspace (`frontend/`)**:
-   - Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
-   - **iOS Liquid-Glass UI & Binary Orbits Galaxy**: Full-screen landing page with an interactive WebGL2 70,000-star spiral galaxy background (`BinaryOrbits.jsx`) and frosted glass cards (`backdrop-filter: blur(16px)`).
-   - **Collapsible Navigation Rail**: Sidebar smoothly toggles between expanded (`260px`) and icon-only rail (`72px`) modes for wide data table viewing.
-   - **Adjudication Closeout Workflow**: Filter review queues by *Pending*, *Adjudicated*, or *All*, with automatic *Reconciliation Adjudication Complete* regulatory sign-off milestones upon 100% review completion.
-   - Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
-   - Regulatory-compliant, formula-injection safe CSV export functionality.
+### 5. Clinical Data Intelligence Workspace (`frontend/`)
+- Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
+- **Liquid-Glass UI**: Dark aesthetic with frosted glass panels (`backdrop-filter: blur(16px)`) and teal/cyan glowing accents.
+- **Collapsible Navigation Rail**: Sidebar smoothly toggles between expanded (`260px`) and icon-only rail (`72px`) modes for wide data table viewing.
+- **Adjudication Closeout Workflow**: Filter review queues by *Pending*, *Adjudicated*, or *All*, with automatic *Reconciliation Adjudication Complete* regulatory sign-off milestones upon 100% review completion.
+- Searchable, filterable, sortable findings table with side-by-side evidence inspection drawer.
+- Regulatory-compliant, formula-injection safe CSV export functionality.
+
+---
+
+## ✉️ Email Verification Setup (Custom SMTP)
+
+To allow any user on the internet (e.g. Gmail, Outlook, enterprise emails) to sign up and receive confirmation emails without needing a custom domain, Supabase is paired with Gmail SMTP via a Google App Password:
+
+1. **Generate Google App Password**:
+   - Go to [Google Account Security](https://myaccount.google.com/security) &rarr; **2-Step Verification** &rarr; [App Passwords](https://myaccount.google.com/apppasswords).
+   - Enter App name: `Supabase`, then click **Create**.
+   - Copy the generated 16-character password.
+2. **Configure Supabase SMTP**:
+   - In Supabase Dashboard &rarr; **Authentication** &rarr; **SMTP Settings**:
+     - **Enable Custom SMTP**: ON
+     - **Sender email**: `your-email@gmail.com`
+     - **Sender name**: `ReconX Intelligence`
+     - **Host**: `smtp.gmail.com`
+     - **Port number**: `465`
+     - **Username**: `your-email@gmail.com`
+     - **Password**: `[16-character Google App Password]`
+     - Click **Save changes**.
+3. **URL Configuration**:
+   - In Supabase &rarr; **Authentication** &rarr; **URL Configuration**:
+     - **Site URL**: `https://main.d2f4yaeel8u9pw.amplifyapp.com`
+     - **Redirect URLs**: `https://main.d2f4yaeel8u9pw.amplifyapp.com/**`
 
 ---
 
@@ -135,27 +165,29 @@ reconx/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AuthModal.jsx     # iOS glassmorphic Sign-in / Sign-up dialog
-│   │   │   ├── BinaryOrbits.jsx  # Interactive WebGL2 tilted spiral galaxy background
-│   │   │   ├── FindingDetail.jsx # Slide-in drawer with evidence comparison & AI assistant
-│   │   │   ├── FindingsTable.jsx # Searchable & filterable findings table
-│   │   │   ├── Sidebar.jsx       # Collapsible navigation sidebar (72px / 260px)
-│   │   │   ├── StatCard.jsx      # Summary KPI card
-│   │   │   └── UploadPanel.jsx   # Dual file dropzone with preview & sample loader
+│   │   │   ├── AuthModal.jsx             # Production Sign-in / Sign-up dialog with email verify screen
+│   │   │   ├── CaduceusOrbits.jsx        # 3D revolving Caduceus particle background (Three.js WebGL2)
+│   │   │   ├── caduceus_base_points.json # Point cloud coordinates for Caduceus 3D geometry
+│   │   │   ├── BinaryOrbits.jsx          # Spiral galaxy particle background component
+│   │   │   ├── FindingDetail.jsx         # Slide-in drawer with evidence comparison & AI assistant
+│   │   │   ├── FindingsTable.jsx         # Searchable & filterable findings table
+│   │   │   ├── Sidebar.jsx               # Collapsible navigation sidebar (72px / 260px)
+│   │   │   ├── StatCard.jsx              # Summary KPI card
+│   │   │   └── UploadPanel.jsx           # Dual file dropzone with preview & sample loader
 │   │   ├── pages/
-│   │   │   ├── AuditTrail.jsx    # Audit event history
-│   │   │   ├── Dashboard.jsx     # Overview with Recharts analytics
-│   │   │   ├── Findings.jsx      # Discrepancy findings explorer
-│   │   │   ├── Home.jsx          # Dedicated landing page explaining platform capabilities
-│   │   │   ├── Reconciliation.jsx# Reconciliation run setup
-│   │   │   ├── Reports.jsx       # Export and run summary
-│   │   │   └── ReviewQueue.jsx   # Human review queue with adjudication closeout
+│   │   │   ├── AuditTrail.jsx            # Audit event history
+│   │   │   ├── Dashboard.jsx             # Overview with Recharts analytics
+│   │   │   ├── Findings.jsx              # Discrepancy findings explorer
+│   │   │   ├── Home.jsx                  # Dedicated landing page explaining platform capabilities
+│   │   │   ├── Reconciliation.jsx        # Reconciliation run setup
+│   │   │   ├── Reports.jsx               # Export and run summary
+│   │   │   └── ReviewQueue.jsx           # Human review queue with adjudication closeout
 │   │   ├── services/
-│   │   │   ├── api.js            # Unified API, Auth & Supabase database client
-│   │   │   ├── assistantEngine.js# Client-side explanation & hypothesis synthesizer
-│   │   │   └── reconEngine.js    # Client-side deterministic reconciliation engine
-│   │   ├── App.jsx               # Application root layout, auth & status monitor
-│   │   └── index.css             # Design tokens & dynamic iOS glass styles
+│   │   │   ├── api.js                    # Unified API, Auth & Supabase database client
+│   │   │   ├── assistantEngine.js        # Client-side explanation & hypothesis synthesizer
+│   │   │   └── reconEngine.js            # Client-side deterministic reconciliation engine
+│   │   ├── App.jsx                       # Application root layout, auth & status monitor
+│   │   └── index.css                     # Design tokens & dynamic iOS glass styles
 │   ├── package.json
 │   └── vite.config.js
 ├── README.md
