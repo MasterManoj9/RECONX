@@ -9,6 +9,7 @@ import AuditTrail from './pages/AuditTrail';
 import Reports from './pages/Reports';
 import FindingDetail from './components/FindingDetail';
 import AuthModal from './components/AuthModal';
+import ReconXAssistant from './components/ReconXAssistant';
 import { 
   fetchHealth, 
   submitFindingReview, 
@@ -204,6 +205,7 @@ export default function App() {
           initialMessage={authMessage}
           initialEmail={authEmail}
         />
+      <ReconXAssistant />
       </>
     );
   }
@@ -370,6 +372,7 @@ export default function App() {
         initialMessage={authMessage}
         initialEmail={authEmail}
       />
+    <ReconXAssistant />
     </div>
   );
 }

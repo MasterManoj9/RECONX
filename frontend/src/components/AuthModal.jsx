@@ -23,6 +23,7 @@ export default function AuthModal({
   // Sync state whenever modal is opened or initial props change
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode(initialMode || 'login');
       if (initialEmail) setEmail(initialEmail);
       if (initialMessage) setSuccessMsg(initialMessage);
