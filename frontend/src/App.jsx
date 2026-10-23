@@ -24,12 +24,65 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [authMessage, setAuthMessage] = useState(null);
+  const [authEmail, setAuthEmail] = useState('');
   const [reconResult, setReconResult] = useState(null);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Check stored session on mount
+  // Check stored session or email confirmation callback on mount
   useEffect(() => {
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+
+    // Check for Supabase error returned in redirect
+    const hasAuthError = hash.includes('error=') || search.includes('error=');
+    if (hasAuthError) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      signOutUser().finally(() => {
+        setCurrentUser(null);
+        setCurrentTab('home');
+        setAuthMode('login');
+        setAuthMessage(null);
+        setIsAuthOpen(true);
+      });
+      return;
+    }
+
+    // Detect if returning from Supabase confirmation email redirect
+    const isVerificationRedirect = 
+      search.includes('verified=true') || 
+      hash.includes('type=signup') || 
+      search.includes('type=signup') ||
+      hash.includes('type=email_change') ||
+      hash.includes('confirmation_token=');
+
+    if (isVerificationRedirect) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Extract verified email if Supabase minted a session, then force sign out
+      getStoredSession().then(async (tempUser) => {
+        const confirmedEmail = tempUser?.email || '';
+        await signOutUser();
+        setCurrentUser(null);
+        setCurrentTab('home');
+        setAuthMode('login');
+        if (confirmedEmail) setAuthEmail(confirmedEmail);
+        setAuthMessage('Email confirmed successfully! Please sign in with your credentials to access your dashboard.');
+        setIsAuthOpen(true);
+      }).catch(async () => {
+        await signOutUser();
+        setCurrentUser(null);
+        setCurrentTab('home');
+        setAuthMode('login');
+        setAuthMessage('Email confirmed successfully! Please sign in with your credentials to access your dashboard.');
+        setIsAuthOpen(true);
+      });
+      return;
+    }
+
+    // Regular session retrieval
     getStoredSession().then((user) => {
       if (user) {
         setCurrentUser(user);
@@ -59,11 +112,17 @@ export default function App() {
     setCurrentTab('home');
   };
 
+  const handleOpenAuth = (mode = 'login') => {
+    setAuthMode(mode);
+    setAuthMessage(null);
+    setIsAuthOpen(true);
+  };
+
   const handleEnterDashboard = () => {
     if (currentUser) {
       setCurrentTab('overview');
     } else {
-      setIsAuthOpen(true);
+      handleOpenAuth('login');
     }
   };
 
@@ -71,7 +130,7 @@ export default function App() {
     if (currentUser) {
       setCurrentTab('reconciliation');
     } else {
-      setIsAuthOpen(true);
+      handleOpenAuth('login');
     }
   };
 
@@ -131,13 +190,19 @@ export default function App() {
           onEnterDashboard={handleEnterDashboard}
           onStartRecon={handleStartRecon}
           currentUser={currentUser}
-          onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenAuth={() => handleOpenAuth('login')}
           onSignOut={handleSignOut}
         />
         <AuthModal
           isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
+          onClose={() => {
+            setIsAuthOpen(false);
+            setAuthMessage(null);
+          }}
           onSuccess={handleAuthSuccess}
+          initialMode={authMode}
+          initialMessage={authMessage}
+          initialEmail={authEmail}
         />
       </>
     );
@@ -296,8 +361,14 @@ export default function App() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setAuthMessage(null);
+        }}
         onSuccess={handleAuthSuccess}
+        initialMode={authMode}
+        initialMessage={authMessage}
+        initialEmail={authEmail}
       />
     </div>
   );

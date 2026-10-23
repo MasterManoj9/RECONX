@@ -16,37 +16,40 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Auth helper services
 export async function signUpUser(email, password, fullName) {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || email.split('@')[0],
-        },
+  const redirectUrl = `${window.location.origin}${window.location.pathname}?verified=true`;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName || email.split('@')[0],
       },
-    });
-    if (error) throw error;
-    const user = data.user || {
-      id: `usr_${Math.random().toString(36).slice(2, 10)}`,
-      email,
-      displayName: fullName || email.split('@')[0],
-    };
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.user_metadata?.full_name || fullName || email.split('@')[0],
-    };
-  } catch (err) {
-    if (err.message && err.message.toLowerCase().includes('confirm')) {
-      return {
-        id: `usr_${Math.random().toString(36).slice(2, 10)}`,
-        email,
-        displayName: fullName || email.split('@')[0],
-      };
+      emailRedirectTo: redirectUrl,
+    },
+  });
+
+  if (error) {
+    if (error.message && error.message.toLowerCase().includes('user already registered')) {
+      throw new Error('An account with this email already exists. Please switch to Sign In.');
     }
-    throw err;
+    throw error;
   }
+
+  // Supabase protection: if user already exists and email confirm is on, identities array is empty
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    throw new Error('An account with this email is already registered. Please sign in with your password.');
+  }
+
+  // If session is null, Supabase requires email confirmation before login
+  const requiresConfirmation = !data?.session;
+
+  return {
+    user: data.user,
+    session: data.session,
+    requiresConfirmation,
+    email: data.user?.email || email,
+    displayName: data.user?.user_metadata?.full_name || fullName || email.split('@')[0],
+  };
 }
 
 export async function signInUser(email, password) {
@@ -54,7 +57,15 @@ export async function signInUser(email, password) {
     email,
     password,
   });
-  if (error) throw error;
+  if (error) {
+    if (error.message && error.message.toLowerCase().includes('email not confirmed')) {
+      throw new Error('Your email has not been confirmed yet. Please check your inbox and click the confirmation link before signing in.');
+    }
+    if (error.message && error.message.toLowerCase().includes('invalid login credentials')) {
+      throw new Error('Invalid email or password. Please check your credentials and try again.');
+    }
+    throw error;
+  }
   return {
     id: data.user.id,
     email: data.user.email,
