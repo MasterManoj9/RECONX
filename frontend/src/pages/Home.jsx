@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { 
   ArrowRight, 
   GitCompare, 
@@ -9,11 +8,8 @@ import {
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import CaduceusOrbits from '../components/CaduceusOrbits';
-import BinaryOrbits from '../components/BinaryOrbits';
 
 export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOpenAuth, onSignOut }) {
-  const [bgTheme, setBgTheme] = useState('caduceus');
-
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Background Orbits Canvas */}
@@ -30,58 +26,21 @@ export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOp
         }}
         aria-hidden="true"
       >
-        {bgTheme === 'caduceus' ? (
-          <CaduceusOrbits
-            colors={["#2dd4bf", "#c084fc"]}
-            backgroundColor={"#0A0A0A"}
-            starSize={1.7}
-            scale={0.92}
-            centerX={0.5}
-            centerY={0.5}
-            glow={0.52}
-            intensity={1.05}
-            speed={1.0}
-            paused={false}
-            interactive={true}
-            clickRipple={true}
-            style={{ width: '100%', height: '100%' }}
-          />
-        ) : (
-          <BinaryOrbits
-            colors={["#7B4DFF", "#FFC2EE"]}
-            backgroundColor={"#0A0A0A"}
-            mode={"auto"}
-            stars={70000}
-            starSize={1.7}
-            sparkle={0.5}
-            arms={3}
-            twist={3.5}
-            armStrength={0.5}
-            dust={0.5}
-            core={1}
-            coreSize={0.07}
-            innerVoid={0}
-            thickness={0.02}
-            tilt={62}
-            roll={-8}
-            scale={1}
-            centerX={0.5}
-            centerY={0.52}
-            speed={1}
-            twinkle={0.35}
-            depth={0.4}
-            glow={0.45}
-            intensity={1}
-            interactive={true}
-            hoverWake={true}
-            clickRipple={true}
-            wakeStrength={1}
-            rippleStrength={1}
-            hoverBoost={0.5}
-            paused={false}
-            style={{ width: '100%', height: '100%' }}
-          />
-        )}
+        <CaduceusOrbits
+          colors={["#2dd4bf", "#c084fc"]}
+          backgroundColor={"#0A0A0A"}
+          starSize={1.7}
+          scale={0.92}
+          centerX={0.5}
+          centerY={0.5}
+          glow={0.52}
+          intensity={1.05}
+          speed={1.0}
+          paused={false}
+          interactive={true}
+          clickRipple={true}
+          style={{ width: '100%', height: '100%' }}
+        />
       </div>
 
       {/* Top Navbar for Home */}
@@ -115,61 +74,6 @@ export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOp
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Particle Theme Switcher */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '20px',
-            padding: '3px',
-            gap: '2px',
-            marginRight: '8px'
-          }}>
-            <button
-              type="button"
-              onClick={() => setBgTheme('caduceus')}
-              title="Medical Caduceus Particle Emblem"
-              style={{
-                padding: '4px 10px',
-                fontSize: '12px',
-                fontWeight: 600,
-                borderRadius: '16px',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: bgTheme === 'caduceus' ? 'rgba(45, 212, 191, 0.22)' : 'transparent',
-                color: bgTheme === 'caduceus' ? '#2dd4bf' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              ⚕ Caduceus
-            </button>
-            <button
-              type="button"
-              onClick={() => setBgTheme('galaxy')}
-              title="Spiral Galaxy Particle Field"
-              style={{
-                padding: '4px 10px',
-                fontSize: '12px',
-                fontWeight: 600,
-                borderRadius: '16px',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: bgTheme === 'galaxy' ? 'rgba(192, 132, 252, 0.22)' : 'transparent',
-                color: bgTheme === 'galaxy' ? '#c084fc' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              ✦ Galaxy
-            </button>
-          </div>
-
           <a
             href="#how-it-works"
             style={{
