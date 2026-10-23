@@ -47,10 +47,12 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
 - Renders the iconic medical Caduceus (winged staff with twin entwined serpents) using thousands of glowing, colored particles.
 - Features continuous 3D axial revolution with responsive mouse-tracking parallax and interactive click-ripple shockwaves.
 
-### 4. Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)
-- Operates strictly on minimal, de-identified finding evidence.
-- Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
-- Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
+### 4. Google Gemini NLP Clinical Intelligence Suite (`geminiNLP.js`)
+- **Natural Language Findings Search & Q&A**: Reviewers can query clinical findings using conversational English (e.g., *"Which participants have potassium differences > 0.5?"*, *"Summarize all missing central lab records"*). Gemini NLP interprets reviewer intent, provides clinical narrative responses, and dynamically filters the findings table in real-time.
+- **Deep Discrepancy Reasoning**: Analyzes discrepancies across eCRF and Lab evidence to formulate probable root causes (sample degradation, accession barcode mismatch, transcription error, or assay recalibration).
+- **Automated Site Query Letter Drafting**: Generates formal, audit-ready inquiry letters addressed to Site Coordinators/PIs with 1-click clipboard copying.
+- **Regulatory Risk Rating**: Synthesizes regulatory risk assessments (`HIGH`, `MEDIUM`, `LOW`) grounded in ALCOA+ data integrity standards.
+- **Dual Engine Safety Fallback**: If an external API key is not configured, ReconX automatically defaults to its transparent, deterministic rule-based knowledge engine without breaking the user experience.
 
 ### 5. Clinical Data Intelligence Workspace (`frontend/`)
 - Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
@@ -165,6 +167,7 @@ reconx/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── AISettingsModal.jsx       # Google Gemini NLP key configuration modal
 │   │   │   ├── AuthModal.jsx             # Production Sign-in / Sign-up dialog with email verify screen
 │   │   │   ├── CaduceusOrbits.jsx        # 3D revolving Caduceus particle background (Three.js WebGL2)
 │   │   │   ├── caduceus_base_points.json # Point cloud coordinates for Caduceus 3D geometry
@@ -177,13 +180,14 @@ reconx/
 │   │   ├── pages/
 │   │   │   ├── AuditTrail.jsx            # Audit event history
 │   │   │   ├── Dashboard.jsx             # Overview with Recharts analytics
-│   │   │   ├── Findings.jsx              # Discrepancy findings explorer
+│   │   │   ├── Findings.jsx              # Discrepancy findings explorer with Gemini NLP search
 │   │   │   ├── Home.jsx                  # Dedicated landing page explaining platform capabilities
 │   │   │   ├── Reconciliation.jsx        # Reconciliation run setup
 │   │   │   ├── Reports.jsx               # Export and run summary
 │   │   │   └── ReviewQueue.jsx           # Human review queue with adjudication closeout
 │   │   ├── services/
 │   │   │   ├── api.js                    # Unified API, Auth & Supabase database client
+│   │   │   ├── geminiNLP.js              # Google Gemini NLP engine (Search, Q&A, Site Query generator)
 │   │   │   ├── assistantEngine.js        # Client-side explanation & hypothesis synthesizer
 │   │   │   └── reconEngine.js            # Client-side deterministic reconciliation engine
 │   │   ├── App.jsx                       # Application root layout, auth & status monitor
