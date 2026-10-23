@@ -47,12 +47,18 @@ ReconX is an enterprise-grade clinical data intelligence application designed fo
 - Renders the iconic medical Caduceus (winged staff with twin entwined serpents) using thousands of glowing, colored particles.
 - Features continuous 3D axial revolution with responsive mouse-tracking parallax and interactive click-ripple shockwaves.
 
-### 4. Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)
+### 4. ReconX AI Assistant (`ReconXAssistant.jsx`)
+- **Always-Accessible Floating Clinical Companion**: Positioned as an interactive chat bubble in the lower-right corner across both the landing page and workspace views.
+- **Interactive Regulatory & Clinical Guidance**: Answers user inquiries regarding dataset uploads, reconciliation workflows, discrepancy rule mechanics, and 21 CFR Part 11 / ALCOA+ data integrity standards.
+- **Instant Onboarding Starter Prompts**: Provides 1-click suggested prompts to orient new clinical reviewers (*"What is ReconX?"*, *"How do I upload and reconcile eCRF vs Lab datasets?"*, *"Explain the 11 clinical discrepancy rules"*).
+- **Dual-Engine Response Architecture**: Powered by dynamic conversational intelligence with seamless fallback clinical knowledge handling to guarantee 100% uptime and instant responses.
+
+### 5. Clinical Explanation Assistant (`assistantEngine.js` & `backend/assistant.py`)
 - Operates strictly on minimal, de-identified finding evidence.
 - Generates structured summaries, supported facts, explicit hypotheses, next investigation steps, and clear statements of data boundaries.
 - Strict clinical safety constraints: never diagnoses, never decides clinical significance, never resolves findings automatically, and provides a transparent rule-based knowledge fallback.
 
-### 5. Clinical Data Intelligence Workspace (`frontend/`)
+### 6. Clinical Data Intelligence Workspace (`frontend/`)
 - Built with **React 19**, **Vite**, **Three.js**, **Lucide Icons**, and **Recharts**.
 - **Liquid-Glass UI**: Dark aesthetic with frosted glass panels (`backdrop-filter: blur(16px)`) and teal/cyan glowing accents.
 - **Collapsible Navigation Rail**: Sidebar smoothly toggles between expanded (`260px`) and icon-only rail (`72px`) modes for wide data table viewing.
@@ -169,6 +175,7 @@ reconx/
 │   │   │   ├── CaduceusOrbits.jsx        # 3D revolving Caduceus particle background (Three.js WebGL2)
 │   │   │   ├── caduceus_base_points.json # Point cloud coordinates for Caduceus 3D geometry
 │   │   │   ├── BinaryOrbits.jsx          # Spiral galaxy particle background component
+│   │   │   ├── ReconXAssistant.jsx        # Floating clinical AI assistant chat bubble
 │   │   │   ├── FindingDetail.jsx         # Slide-in drawer with evidence comparison & AI assistant
 │   │   │   ├── FindingsTable.jsx         # Searchable & filterable findings table
 │   │   │   ├── Sidebar.jsx               # Collapsible navigation sidebar (72px / 260px)
@@ -184,6 +191,7 @@ reconx/
 │   │   │   └── ReviewQueue.jsx           # Human review queue with adjudication closeout
 │   │   ├── services/
 │   │   │   ├── api.js                    # Unified API, Auth & Supabase database client
+│   │   │   ├── chatService.js             # Conversational intelligence service adapter
 │   │   │   ├── assistantEngine.js        # Client-side explanation & hypothesis synthesizer
 │   │   │   └── reconEngine.js            # Client-side deterministic reconciliation engine
 │   │   ├── App.jsx                       # Application root layout, auth & status monitor
