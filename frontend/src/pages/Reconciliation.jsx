@@ -11,7 +11,6 @@ export default function Reconciliation({ onReconciliationComplete, userId }) {
           Execute strict clinical rules across eCRF and Central Laboratory datasets with complete auditability.
         </div>
       </div>
-
       <UploadPanel onReconciliationComplete={onReconciliationComplete} userId={userId} />
     </div>
   );
