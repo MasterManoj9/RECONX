@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import CaduceusOrbits from '../components/CaduceusOrbits';
-
 export default function Home({ onEnterDashboard, onStartRecon, currentUser, onOpenAuth }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
