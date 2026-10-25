@@ -3,7 +3,6 @@
 Persists reconciliations and audit trail records to Supabase PostgreSQL,
 with seamless fallback to InMemoryStore if Supabase is unavailable or offline.
 """
-
 from __future__ import annotations
 
 import os
