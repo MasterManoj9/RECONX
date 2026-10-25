@@ -11,7 +11,6 @@ export default function Findings({ findings = [], onSelectFinding, selectedFindi
           Explore, filter, and drill into deterministic findings flagged by the reconciliation engine.
         </div>
       </div>
-
       <div className="card">
         <FindingsTable
           findings={findings}
