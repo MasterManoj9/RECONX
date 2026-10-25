@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi.testclient import TestClient
-
 from backend.assistant import FindingEvidencePayload, generate_explanation
 from backend.main import app
 
