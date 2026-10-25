@@ -237,7 +237,6 @@ export default function Dashboard({
             </button>
           )}
         </div>
-
         {findings.length > 0 ? (
           <FindingsTable
             findings={findings.slice(0, 5)}
