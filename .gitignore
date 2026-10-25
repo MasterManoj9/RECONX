@@ -33,6 +33,7 @@ frontend/dist/
 frontend/dist-ssr/
 *.local
 
+
 # Editor
 .vscode/
 .idea/
